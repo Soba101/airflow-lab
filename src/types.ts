@@ -1,5 +1,7 @@
 export type V3 = [number, number, number];
 export type Kind = "case" | "gpu" | "board" | "cpu" | "ram" | "storage" | "cooler" | "fan";
+// Case-local coordinates (metres): x from the rear I/O panel toward the front, y up from the case floor,
+// z from the glass/left side panel toward the motherboard tray. Mount normals point into the case.
 export interface Part {
   id: string;
   kind: Kind;
@@ -17,9 +19,37 @@ export interface Part {
   resistance?: number;
   capacity?: number;
   socket?: string;
+  /** board: PCIe x16 slot centrelines, metres below the board's top edge */
   slots?: number[];
+  /** board: CPU socket centre [from rear (I/O) edge, below top edge] */
+  socketAt?: [number, number];
   mounts?: Mount[];
+  /** case: maximum GPU length */
   clearance?: number;
+  /** case: maximum air-cooler height */
+  coolerClearance?: number;
+  /** case: glass-to-motherboard-tray depth of the main chamber */
+  chamber?: number;
+  /** case: PSU shroud height spanning the main chamber floor (0 = none) */
+  shroud?: number;
+  /** case: board top edge below the case top */
+  boardTop?: number;
+  /** case: extra fixed solids (PSU/drive chamber parts) */
+  blocks?: Box[];
+  /** gpu/cooler: number of integrated fans; gpu fans blow up into the heatsink */
+  fanCount?: number;
+  /** gpu: fan diameter */
+  fanSize?: number;
+  /** gpu: fin stack extends past a short PCB so air passes straight through */
+  flowThrough?: boolean;
+  /** air cooler: fin towers (1 or 2) */
+  towers?: number;
+  /** air cooler: front-to-back fin depth without fans */
+  finDepth?: number;
+  /** air cooler: height above the board where fins start (RAM clearance) */
+  finStart?: number;
+  /** cooler: fan model supplied with the cooler (catalogue fan id) */
+  fanPart?: string;
 }
 export interface Mount {
   id: string;
@@ -28,6 +58,10 @@ export interface Mount {
   normal: V3;
   sizes: number[];
   radiator?: boolean;
+  /** maximum radiator + fan stack thickness at this mount, when published */
+  maxStack?: number;
+  /** distance of the fan centre from the panel along the normal (set by geometry for radiator stacks) */
+  offset?: number;
 }
 export interface FanConfig {
   id: string;
@@ -67,7 +101,10 @@ export interface SceneConfig {
   custom: Record<string, Part>;
   fans: FanConfig[];
   panelsOpen: boolean;
-  radiatorMount: "top" | "front";
+  /** mount group (mount id without its index, e.g. "top", "front") holding the AIO radiator */
+  radiatorMount: string;
+  /** air-cooler fan speed */
+  coolerFanRPM: number;
   slot: number;
   room: {
     size: V3;
@@ -91,6 +128,15 @@ export interface Box {
   size: V3;
   kind: string;
   porous?: number;
+  /** used for fit/collision checks and drawing only, not as a flow obstacle */
+  ghost?: boolean;
+  /** human-readable part name for conflict messages */
+  label?: string;
+}
+export interface FanSpot {
+  pos: V3;
+  normal: V3;
+  size: number;
 }
 export interface CaseGeometry {
   size: V3;
@@ -101,6 +147,13 @@ export interface CaseGeometry {
   cpu: V3;
   gpu: V3;
   radiator: V3;
+  /** boxes that receive CPU/GPU heat (radiator or fin stacks; GPU heatsink) */
+  cpuHeat: Box[];
+  gpuHeat: Box[];
+  gpuFans: FanSpot[];
+  coolerFans: FanSpot[];
+  /** mount ids covered by the AIO radiator */
+  radiatorMounts: string[];
 }
 export interface Field {
   n: V3;

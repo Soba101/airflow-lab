@@ -19,7 +19,7 @@ export class GPUProjector {
         solver.reason = info.message || "GPU device lost";
       });
       const code = `@group(0) @binding(0) var<storage,read> p:array<f32>; @group(0) @binding(1) var<storage,read_write> outp:array<f32>; @group(0) @binding(2) var<storage,read> diag:array<f32>; @group(0) @binding(3) var<storage,read> rhs:array<f32>; @group(0) @binding(4) var<storage,read> ns:array<i32>; @group(0) @binding(5) var<storage,read> weights:array<f32>;
-@compute @workgroup_size(64) fn main(@builtin(global_invocation_id) id:vec3u){let k=id.x;if(k>=arrayLength(&diag)){return;}if(diag[k]<=0.0){outp[k]=0.0;return;}var v=rhs[k];for(var a=0u;a<6u;a++){let j=ns[k*6u+a];if(j>=0){v+=weights[a]*p[u32(j)];}}outp[k]=v/diag[k];}`;
+@compute @workgroup_size(64) fn main(@builtin(global_invocation_id) id:vec3u){let k=id.x;if(k>=arrayLength(&diag)){return;}if(diag[k]<=0.0){outp[k]=0.0;return;}var v=rhs[k];for(var a=0u;a<6u;a++){let j=ns[k*6u+a];if(j>=0){v+=weights[k*6u+a]*p[u32(j)];}}outp[k]=v/diag[k];}`;
       solver.pipeline = await device.createComputePipelineAsync({
         layout: "auto",
         compute: { module: device.createShaderModule({ code }), entryPoint: "main" },
@@ -52,7 +52,7 @@ export class GPUProjector {
         diag = buffer(Float32Array.from(g.diag)),
         r = buffer(Float32Array.from(rhs)),
         ns = buffer(g.neighbors),
-        weights = buffer(Float32Array.from(g.weights));
+        weights = buffer(Float32Array.from(g.coef));
       const group = (src: any, dst: any) =>
         d.createBindGroup({
           layout: this.pipeline.getBindGroupLayout(0),

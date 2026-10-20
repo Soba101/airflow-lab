@@ -58,6 +58,8 @@ export class CoupledModel {
   calibrated = false;
   lastExternal = 0;
   pressure: number = 0;
+  cpuPatch: [number, number][];
+  gpuPatch: [number, number][];
   constructor(config: SceneConfig, quality = "preview") {
     this.c = clone(config);
     this.g = geometry(config);
@@ -72,48 +74,38 @@ export class CoupledModel {
       [0, 0, 0],
       0.003,
     );
-    for (const k of this.pc.fluid) {
-      const p = this.pc.point(k);
-      for (const b of this.g.boxes)
-        if (p.every((v, i) => v >= b.min[i] && v <= b.min[i] + b.size[i])) {
-          if (b.porous) this.pc.drag[k] += b.porous;
-          else this.pc.solid[k] = 1;
-        }
-    }
-    this.pc.rebuild();
-    const desk = config.desk;
-    for (const k of this.room.fluid) {
-      const p = this.room.point(k);
-      const insidePC = p.every((v, i) => v >= this.g.origin[i] && v <= this.g.origin[i] + this.g.size[i]);
-      const tabletop =
-        Math.abs(p[0] - desk.position[0]) < desk.width / 2 &&
-        Math.abs(p[2] - desk.position[2]) < desk.depth / 2 &&
-        Math.abs(p[1] - desk.height) < Math.max(0.0175, this.room.h[1] * 0.3);
-      const leg =
-        p[1] < desk.height &&
-        [-1, 1].some((sx) =>
-          [-1, 1].some(
-            (sz) =>
-              Math.abs(p[0] - (desk.position[0] + sx * (desk.width / 2 - 0.05))) < 0.035 &&
-              Math.abs(p[2] - (desk.position[2] + sz * (desk.depth / 2 - 0.05))) < 0.035,
-          ),
-        );
-      if (insidePC || tabletop || leg) this.room.solid[k] = 1;
-    }
-    this.room.rebuild();
+    this.pc.applyBoxes(this.g.boxes);
+    const desk = config.desk,
+      legs = [-1, 1].flatMap((sx) =>
+        [-1, 1].map((sz) => ({
+          min: [
+            desk.position[0] + sx * (desk.width / 2 - 0.055) - 0.022,
+            0,
+            desk.position[2] + sz * (desk.depth / 2 - 0.055) - 0.022,
+          ] as V3,
+          size: [0.044, desk.height, 0.044] as V3,
+        })),
+      );
+    this.room.applyBoxes([
+      { min: this.g.origin, size: this.g.size },
+      {
+        min: [desk.position[0] - desk.width / 2, desk.height, desk.position[2] - desk.depth / 2],
+        size: [desk.width, 0.035, desk.depth],
+      },
+      ...legs,
+    ]);
+    this.cpuPatch = this.g.cpuHeat.length ? this.pc.boxPatch(this.g.cpuHeat) : this.pc.patch(this.g.radiator, 0.05);
+    this.gpuPatch = this.pc.boxPatch(this.g.gpuHeat);
+    if (!this.gpuPatch.length) this.gpuPatch = this.pc.patch(this.g.gpu, 0.05);
     for (const f of config.fans) {
       const m = this.g.mounts.find((m) => m.id === f.mount);
       if (!m || !f.enabled || f.rpm <= 0) continue;
       const fp = part(config, f.part),
         inside = plus(m.position, m.normal, 0.025),
         outside = plus(plus(this.g.origin, m.position), m.normal, -0.055);
+      // shortcut: lumped port losses (panel + radiator core scaled by thickness) are assumed, not measured.
       let loss = 9000;
-      if (
-        part(config, config.parts.cooler).coolerType === "aio" &&
-        (config.radiatorMount === "top" ? f.mount.startsWith("top") : f.mount.startsWith("front"))
-      )
-        loss += 22000;
-      loss += part(config, config.parts.gpu).size[0] * part(config, config.parts.gpu).size[1] * 80000;
+      if (this.g.radiatorMounts.includes(f.mount)) loss += (22000 * part(config, config.parts.cooler).size[1]) / 0.027;
       this.ports.push({
         id: f.id,
         inside,
@@ -246,10 +238,17 @@ export class CoupledModel {
       this.pc.jet(p.inside, dir, (Math.abs(p.q) / (0.004 + p.size * p.size)) * 5, p.size * 0.35);
       if (p.q < 0) this.room.jet(p.outside, dir, (Math.abs(p.q) / (0.004 + p.size * p.size)) * 2, p.size * 0.5);
     }
-    const gp = part(this.c, this.c.parts.gpu),
-      gpuDir: V3 = [0, 1, 0];
-    this.pc.jet(plus(this.g.gpu, [0, -0.045, 0]), gpuDir, 0.7 * (0.5 + this.c.load.gpu / 500), 0.05);
-    if (part(this.c, this.c.parts.cooler).coolerType === "air") this.pc.jet(this.g.cpu, [-1, 0, 0], 0.5, 0.045);
+    // shortcut: GPU fans ramp with GPU power (no GPU fan curve yet); strength scales with fan disc area.
+    const gpuDrive = 0.7 * (0.5 + this.c.load.gpu / 500);
+    for (const f of this.g.gpuFans)
+      this.pc.jet(plus(f.pos, f.normal, -0.01), f.normal, gpuDrive * (f.size / 0.095) ** 2, f.size * 0.4);
+    const co = part(this.c, this.c.parts.cooler);
+    if (co.coolerType === "air" && co.fanPart) {
+      const fp = part(this.c, co.fanPart),
+        q = (fp.cfm || 60) * 0.00047194745 * Math.min(1, this.c.coolerFanRPM / (fp.maxRPM || 2000)) * 0.6;
+      for (const f of this.g.coolerFans)
+        this.pc.jet(f.pos, f.normal, (q / (0.004 + f.size * f.size)) * 5, f.size * 0.35);
+    }
     this.lastMass = Math.abs(this.ports.reduce((a, p) => a + p.q, 0));
   }
   makeTerms() {
@@ -305,9 +304,7 @@ export class CoupledModel {
     const power = (g: FluidGrid, t: ReturnType<typeof terms>) =>
       g.fluid.reduce((sum, k) => sum + RC * g.vol * (t.supply[k] - t.sink[k] * g.T[k]), 0);
     this.lastHeatError = power(this.pc, pc) + power(this.room, room);
-    const cpuPatch = this.pc.patch(this.g.radiator, 0.05),
-      gpuPatch = this.pc.patch(plus(this.g.gpu, [0, -0.045, 0]), 0.05);
-    return { pc, room, add, cpuPatch, gpuPatch };
+    return { pc, room, add, cpuPatch: this.cpuPatch, gpuPatch: this.gpuPatch };
   }
   async prepare(maxDt = 0.08, projector?: { project: (g: FluidGrid) => Promise<void> }) {
     if (this.steps % 8 === 0) this.updatePorts();
@@ -430,11 +427,11 @@ export class CoupledModel {
       energyError: this.lastEnergyError,
       couplingError: this.lastHeatError,
       cpu:
-        this.pc.avg(this.pc.patch(this.g.radiator, 0.05)) +
+        this.pc.avg(this.cpuPatch) +
         (this.c.load.cpu * this.cpuR) /
           Math.max(0.4, Math.min(2.5, Math.sqrt(Math.max(0.0001, this.lastFlow) / 0.035))),
       gpu:
-        this.pc.avg(this.pc.patch(plus(this.g.gpu, [0, -0.045, 0]), 0.05)) +
+        this.pc.avg(this.gpuPatch) +
         (this.c.load.gpu * this.gpuR) /
           Math.max(0.4, Math.min(2.5, Math.sqrt(Math.max(0.0001, this.lastFlow) / 0.035))),
       cpuTransient: this.nodes.cpu,

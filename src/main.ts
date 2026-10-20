@@ -1,7 +1,19 @@
 import "./style.css";
 import { LabView } from "./view";
 import { catalogue, byKind } from "./catalog";
-import { clone, geometry, issues, loadScene, makeCustom, normalize, part, preset, signature } from "./config";
+import {
+  clone,
+  geometry,
+  groupOf,
+  issues,
+  loadScene,
+  makeCustom,
+  normalize,
+  part,
+  preset,
+  signature,
+  syncCoolerFans,
+} from "./config";
 import type { SceneConfig, Kind, Part, Snapshot, V3, WorkerMessage } from "./types";
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const esc = (s: unknown) =>
@@ -56,7 +68,7 @@ function toast(text: string) {
 function partSelector(kind: Exclude<Kind, "fan">, title: string) {
   const current = part(config, config.parts[kind]),
     options = [...byKind(kind), ...Object.values(config.custom).filter((p) => p.kind === kind)];
-  return `<div class="part-row"><div class="field"><label for="part-${kind}">${title}</label><select id="part-${kind}" data-part="${kind}">${options.map((p) => `<option value="${esc(p.id)}" ${p.id === current.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></div><div class="part-actions"><span class="evidence ${current.verified.length ? "" : "assumed"}">${current.verified.length ? "SOURCED ENVELOPE / ASSUMED MODEL" : "ASSUMED / CUSTOM"}</span><button data-custom="${kind}">Edit / custom</button></div><details class="part-evidence"><summary>Dimensions & evidence</summary><div class="hint">${current.size.map((v) => Math.round(v * 1000)).join(" × ")} mm${current.note ? " · " + esc(current.note) : ""}</div>${current.source ? `<a class="source" target="_blank" rel="noopener" href="${esc(current.source)}">Manufacturer evidence ↗</a>` : ""}</details></div>`;
+  return `<div class="part-row"><div class="field"><label for="part-${kind}">${title}</label><select id="part-${kind}" data-part="${kind}">${options.map((p) => `<option value="${esc(p.id)}" ${p.id === current.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></div><div class="part-actions"><span class="evidence ${current.verified.length ? "" : "assumed"}">${current.verified.length ? "SOURCED ENVELOPE / ASSUMED MODEL" : "ASSUMED / CUSTOM"}</span><button data-custom="${kind}">Edit / custom</button></div><details class="part-evidence"><summary>Dimensions & evidence</summary><div class="hint">${current.size.map((v) => Math.round(v * 1000)).join(" × ")} mm${specSummary(current)}${current.note ? " · " + esc(current.note) : ""}</div>${current.source ? `<a class="source" target="_blank" rel="noopener" href="${esc(current.source)}">Manufacturer evidence ↗</a>` : ""}</details></div>`;
 }
 function renderBuild() {
   const g = geometry(config),
@@ -64,7 +76,7 @@ function renderBuild() {
     f = config.fans[selectedFan],
     fp = f ? part(config, f.part) : null;
   $("buildPanel").innerHTML =
-    `${(["case", "gpu", "board", "cpu", "ram", "storage", "cooler"] as const).map((k, i) => partSelector(k, ["CASE", "GRAPHICS CARD", "MOTHERBOARD", "CPU", "RAM", "STORAGE", "CPU COOLER"][i])).join("")}<div class="field"><label for="gpuSlot">MOTHERBOARD PCIe SLOT</label><select id="gpuSlot">${(part(config, config.parts.board).slots || [0.205]).map((s, i) => `<option value="${i}" ${i === config.slot ? "selected" : ""}>${i ? "Secondary (reduced lanes)" : "Primary PCIEX16"} · board-fixed</option>`).join("")}</select></div>${cooler.coolerType === "aio" ? `<div class="field"><label for="radiatorMount">RADIATOR MOUNT</label><select id="radiatorMount"><option value="top" ${config.radiatorMount === "top" ? "selected" : ""}>Top</option><option value="front" ${config.radiatorMount === "front" ? "selected" : ""}>Front (requires compatible case)</option></select></div>` : ""}<div class="sectionhead">Fan layout</div><div class="hint">Select a model and a valid mount. Changing cases retains your choices and reports incompatible mounts.</div><button class="blockbutton" id="compatibleLayout">Apply this case’s compatible starter layout</button><div class="field"><label for="fanSelect">SELECT FAN</label><select id="fanSelect">${config.fans.map((f, i) => `<option value="${i}" ${selectedFan === i ? "selected" : ""}>${esc(f.mount)} · ${esc(part(config, f.part).name)}</option>`).join("")}</select></div>${f && fp ? `<div class="field"><label for="fanModel">FAN MODEL</label><select id="fanModel">${[...byKind("fan"), ...Object.values(config.custom).filter((p) => p.kind === "fan")].map((p) => `<option value="${p.id}" ${p.id === f.part ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></div><div class="field"><label for="fanMount">SNAP TO MOUNT</label><select id="fanMount">${!g.mounts.find((m) => m.id === f.mount) ? `<option value="${f.mount}">${f.mount} (invalid)</option>` : ""}${g.mounts.map((m) => `<option value="${m.id}" ${m.id === f.mount ? "selected" : ""}>${m.name} · ${m.sizes.join("/")} mm</option>`).join("")}</select></div>${field("fanRPM", "SPEED", f.rpm, 0, fp.maxRPM || 3000, 50, " RPM", "range")}<div class="compact"><button id="flipFan">${f.intake ? "Intake → flip" : "Exhaust → flip"}</button><button id="toggleFan">${f.enabled ? "Enabled" : "Disabled"}</button><button id="deleteFan">Remove</button></div><div class="hint">${esc(fp.curveStatus || "Custom measured curve when supplied; otherwise estimated.")}</div><button data-custom="fan" class="blockbutton">Custom fan / measured P–Q curve</button>` : ""}<button id="addFan" class="blockbutton">＋ Add fan</button><div class="sectionhead">Workload, not TDP</div>${field("cpuW", "CPU PACKAGE", config.load.cpu, 0, 250, 5, " W", "range")}${field("gpuW", "GPU ELECTRICAL", config.load.gpu, 0, 800, 5, " W", "range")}${field("otherW", "OTHER SYSTEM / FAN HEAT", config.load.other, 0, 300, 5, " W", "range")}<p class="hint">Component estimates use thermal resistance/capacitance models. Manufacturer TDP and cooler dimensions do not establish thermal accuracy.</p>`;
+    `${(["case", "gpu", "board", "cpu", "ram", "storage", "cooler"] as const).map((k, i) => partSelector(k, ["CASE", "GRAPHICS CARD", "MOTHERBOARD", "CPU", "RAM", "STORAGE", "CPU COOLER"][i])).join("")}<div class="field"><label for="gpuSlot">MOTHERBOARD PCIe SLOT</label><select id="gpuSlot">${(part(config, config.parts.board).slots || [0.205]).map((s, i) => `<option value="${i}" ${i === config.slot ? "selected" : ""}>${i ? "Secondary (reduced lanes)" : "Primary PCIEX16"} · board-fixed</option>`).join("")}</select></div>${cooler.coolerType === "aio" ? `<div class="field"><label for="radiatorMount">RADIATOR POSITION</label><select id="radiatorMount">${[...new Set(g.mounts.filter((m) => m.radiator).map((m) => groupOf(m.id)))].map((grp) => `<option value="${esc(grp)}" ${config.radiatorMount === grp ? "selected" : ""}>${esc(grp[0].toUpperCase() + grp.slice(1))} · ${g.mounts.filter((m) => m.radiator && groupOf(m.id) === grp).length} fan positions</option>`).join("")}${g.mounts.some((m) => m.radiator && groupOf(m.id) === config.radiatorMount) ? "" : `<option selected value="${esc(config.radiatorMount)}">${esc(config.radiatorMount)} (not in this case)</option>`}</select></div>` : field("coolerRPM", "COOLER FAN SPEED", config.coolerFanRPM, 0, part(config, cooler.fanPart || "p12").maxRPM || 2000, 50, " RPM", "range")}<div class="sectionhead">Fan layout</div><div class="hint">Select a model and a valid mount. Changing cases retains your choices and reports incompatible mounts.</div><button class="blockbutton" id="compatibleLayout">Apply this case’s compatible starter layout</button><div class="field"><label for="fanSelect">SELECT FAN</label><select id="fanSelect">${config.fans.map((f, i) => `<option value="${i}" ${selectedFan === i ? "selected" : ""}>${esc(f.mount)} · ${esc(part(config, f.part).name)}</option>`).join("")}</select></div>${f && fp ? `<div class="field"><label for="fanModel">FAN MODEL</label><select id="fanModel">${[...byKind("fan"), ...Object.values(config.custom).filter((p) => p.kind === "fan")].map((p) => `<option value="${p.id}" ${p.id === f.part ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></div><div class="field"><label for="fanMount">SNAP TO MOUNT</label><select id="fanMount">${!g.mounts.find((m) => m.id === f.mount) ? `<option value="${f.mount}">${f.mount} (invalid)</option>` : ""}${g.mounts.map((m) => `<option value="${m.id}" ${m.id === f.mount ? "selected" : ""}>${m.name} · ${m.sizes.join("/")} mm</option>`).join("")}</select></div>${field("fanRPM", "SPEED", f.rpm, 0, fp.maxRPM || 3000, 50, " RPM", "range")}<div class="compact"><button id="flipFan">${f.intake ? "Intake → flip" : "Exhaust → flip"}</button><button id="toggleFan">${f.enabled ? "Enabled" : "Disabled"}</button><button id="deleteFan">Remove</button></div><div class="hint">${esc(fp.curveStatus || "Custom measured curve when supplied; otherwise estimated.")}</div><button data-custom="fan" class="blockbutton">Custom fan / measured P–Q curve</button>` : ""}<button id="addFan" class="blockbutton">＋ Add fan</button><div class="sectionhead">Workload, not TDP</div>${field("cpuW", "CPU PACKAGE", config.load.cpu, 0, 250, 5, " W", "range")}${field("gpuW", "GPU ELECTRICAL", config.load.gpu, 0, 800, 5, " W", "range")}${field("otherW", "OTHER SYSTEM / FAN HEAT", config.load.other, 0, 300, 5, " W", "range")}<p class="hint">Component estimates use thermal resistance/capacitance models. Manufacturer TDP and cooler dimensions do not establish thermal accuracy.</p>`;
 }
 function renderRoom() {
   const r = config.room,
@@ -261,6 +273,23 @@ function showSources() {
     `<p>This is a browser-based engineering-style model, not a validated temperature predictor. Smoke follows 3D projected velocity fields. The worker uses simplified momentum/heat transport, porous drag, fan pressure models and two-way case/room port exchange. Geometry, loss coefficients and thermal resistances are uncertain.</p><p>CPU/GPU headline values are component equilibrium estimates for the current calculated local air, derived from thermal resistance models. The diagnostics separately show transient thermal-node temperatures. A steady component estimate does not establish room thermal equilibrium.</p><p>Fan curves are fitted from published endpoints unless a measured custom curve is provided. Window/door flow is prescribed exchange, not an external wind simulation. Fine fins, wires, filters and fan blades are sub-grid/porous approximations. Wall heat capacity, humidity, solar gains and validated turbulence are omitted.</p><p>Evidence is per property, not a blanket claim that a part is fully verified. Internal mount coordinates remain approximate. Numerical checks test conservation and references, not agreement with your real build.</p><div class="source-list">${selected.map((p) => `<article><b>${esc(p.name)}</b><br>${p.size.map((v) => Math.round(v * 1000)).join(" × ")} mm<br>${p.verified.length ? esc(p.verified.join(" · ")) : "User-defined / assumed envelope"}<small>${esc(p.note || "Thermal performance requires a calibrated model.")}</small>${p.source?.startsWith("https://") ? `<a href="${esc(p.source)}" target="_blank" rel="noopener">Manufacturer source ↗</a>` : ""}</article>`).join("")}</div>`;
   $<HTMLDialogElement>("sourceDialog").showModal();
 }
+function specSummary(p: Part) {
+  const fans = p.fanCount
+    ? `${p.fanCount} × ${Math.round((p.fanSize || part(config, p.fanPart || "p12").size[0]) * 1000)} mm fans`
+    : "";
+  if (p.kind === "gpu") return ` · ${fans}${p.flowThrough ? " · flow-through" : ""}`;
+  if (p.kind === "cooler")
+    return p.coolerType === "aio"
+      ? ` · ${Math.round(p.size[0] * 1000)} mm radiator, ${Math.round(p.size[1] * 1000)} mm thick · ${fans}`
+      : ` · ${p.towers === 2 ? "dual" : "single"} tower · ${fans}`;
+  return "";
+}
+const sizeLabels: Partial<Record<Kind, string[]>> = {
+  case: ["DEPTH", "HEIGHT", "WIDTH"],
+  gpu: ["LENGTH", "THICKNESS", "HEIGHT"],
+  board: ["WIDTH", "HEIGHT", "PCB"],
+  fan: ["SIZE", "THICKNESS", "SIZE"],
+};
 function editCustom(kind: Kind) {
   customKind = kind;
   currentCustom = makeCustom(
@@ -270,9 +299,24 @@ function editCustom(kind: Kind) {
   );
   const p = currentCustom;
   $("customBody").innerHTML =
-    `<div class="field"><label for="customName">NAME</label><input type="text" id="customName" value="${esc(p.name)}"></div><div class="threecols">${p.size.map((v, i) => field(`custom${i}`, ["X / LENGTH", "Y / HEIGHT", "Z / DEPTH"][i], Math.round(v * 1000), 1, 2000, 1, " mm")).join("")}</div>${field("customR", "TOTAL THERMAL RESISTANCE", p.resistance || 0.15, 0.02, 2, 0.01, " K/W")}${field("customCapacity", "THERMAL CAPACITY", p.capacity || 500, 10, 5000, 10, " J/K")}${kind === "fan" ? `${field("customRPM", "MAX RPM", p.maxRPM || 2000, 100, 5000, 50)}${field("customCFM", "FREE AIRFLOW", p.cfm || 60, 1, 250, 1, " CFM")}${field("customPressure", "SHUTOFF PRESSURE", p.pressure || 20, 1, 200, 1, " Pa")}<div class="field"><label for="customCurve">MEASURED CURVE: FRACTION OF RATED FLOW, PA</label><textarea id="customCurve" placeholder="0, 30&#10;0.5, 20&#10;1, 0"></textarea></div>` : ""}${kind === "case" ? `<div class="field"><label for="customMounts">MOUNT ARRAY (METRES; NORMAL POINTS INWARD)</label><textarea id="customMounts">${esc(JSON.stringify(p.mounts, null, 2))}</textarea></div><p class="hint">Inherited coordinates stay fixed until you edit them. Size changes do not silently rearrange mounts.</p>` : ""}${kind === "board" ? `<div class="field"><label for="customSlots">SLOT HEIGHTS ABOVE CASE FLOOR · mm</label><input id="customSlots" value="${(p.slots || [0.205]).map((v) => v * 1000).join(", ")}"></div>` : ""}<p class="hint">Custom values are user assumptions/measurements. Thermal capacity/resistance are used by the lumped model where applicable. Case loss and detailed fins remain estimated.</p>`;
+    `<div class="field"><label for="customName">NAME</label><input type="text" id="customName" value="${esc(p.name)}"></div><div class="threecols">${p.size.map((v, i) => field(`custom${i}`, (kind === "cooler" ? (p.coolerType === "aio" ? ["RADIATOR LENGTH", "RADIATOR THICKNESS", "RADIATOR WIDTH"] : ["DEPTH WITH FANS", "WIDTH", "HEIGHT"]) : sizeLabels[kind] || ["X / LENGTH", "Y / HEIGHT", "Z / DEPTH"])[i], Math.round(v * 1000), 1, 2000, 1, " mm")).join("")}</div>${specFields(p)}${field("customR", "TOTAL THERMAL RESISTANCE", p.resistance || 0.15, 0.02, 2, 0.01, " K/W")}${field("customCapacity", "THERMAL CAPACITY", p.capacity || 500, 10, 5000, 10, " J/K")}${kind === "fan" ? `${field("customRPM", "MAX RPM", p.maxRPM || 2000, 100, 5000, 50)}${field("customCFM", "FREE AIRFLOW", p.cfm || 60, 1, 250, 1, " CFM")}${field("customPressure", "SHUTOFF PRESSURE", p.pressure || 20, 1, 200, 1, " Pa")}<div class="field"><label for="customCurve">MEASURED CURVE: FRACTION OF RATED FLOW, PA</label><textarea id="customCurve" placeholder="0, 30&#10;0.5, 20&#10;1, 0"></textarea></div>` : ""}${kind === "case" ? `<div class="field"><label for="customMounts">MOUNT ARRAY (METRES; NORMAL POINTS INWARD)</label><textarea id="customMounts">${esc(JSON.stringify(p.mounts, null, 2))}</textarea></div><p class="hint">Inherited coordinates stay fixed until you edit them. Size changes do not silently rearrange mounts.</p>` : ""}${kind === "board" ? `<div class="field"><label for="customSlots">PCIe x16 SLOT CENTRELINES BELOW BOARD TOP EDGE · mm</label><input id="customSlots" value="${(p.slots || [0.19]).map((v) => Math.round(v * 1000)).join(", ")}"></div>` : ""}<p class="hint">Custom values are user assumptions/measurements. Thermal capacity/resistance are used by the lumped model where applicable. Case loss and detailed fins remain estimated.</p>`;
   $("customError").hidden = true;
   $<HTMLDialogElement>("customDialog").showModal();
+}
+const fanOptions = (selected?: string) =>
+  [...byKind("fan"), ...Object.values(config.custom).filter((p) => p.kind === "fan")]
+    .map((f) => `<option value="${esc(f.id)}" ${f.id === selected ? "selected" : ""}>${esc(f.name)}</option>`)
+    .join("");
+function specFields(p: Part) {
+  const mmField = (id: string, label: string, v: number | undefined, def: number) =>
+    field(id, label, Math.round((v ?? def) * 1000), 0, 1000, 1, " mm");
+  if (p.kind === "gpu")
+    return `<div class="threecols">${field("customFans", "FANS", p.fanCount ?? 2, 0, 4, 1)}${mmField("customFanSize", "FAN DIAMETER", p.fanSize, 0.09)}</div><label class="check"><input id="customFlow" type="checkbox" ${p.flowThrough ? "checked" : ""}> Flow-through heatsink (short PCB, air exits the top)</label>`;
+  if (p.kind === "cooler")
+    return `<div class="threecols">${field("customFans", "FANS", p.fanCount ?? 2, 0, 4, 1)}${p.coolerType === "air" ? `${field("customTowers", "TOWERS", p.towers ?? 1, 1, 2, 1)}${mmField("customFin", "FIN DEPTH (NO FANS)", p.finDepth, 0.06)}${mmField("customFinStart", "FINS START ABOVE BOARD", p.finStart, 0.04)}` : ""}</div><div class="field"><label for="customFanPart">SUPPLIED FAN MODEL</label><select id="customFanPart">${fanOptions(p.fanPart)}</select></div>`;
+  if (p.kind === "case")
+    return `<div class="threecols">${mmField("customChamber", "GLASS TO TRAY", p.chamber, p.size[2] - 0.025)}${mmField("customShroud", "PSU SHROUD HEIGHT", p.shroud, 0)}${mmField("customGpuMax", "MAX GPU LENGTH", p.clearance, p.size[0] - 0.05)}${mmField("customCoolerMax", "MAX COOLER HEIGHT", p.coolerClearance, 0.16)}</div>`;
+  return "";
 }
 function saveCustom() {
   if (!currentCustom) return;
@@ -299,7 +343,26 @@ function saveCustom() {
         p.curveStatus = "User-entered measured pressure curve.";
       }
     }
+    const num = (id: string) => +$<HTMLInputElement>(id).value;
+    if (p.kind === "gpu") {
+      p.fanCount = num("customFans");
+      p.fanSize = num("customFanSize") / 1000;
+      p.flowThrough = $<HTMLInputElement>("customFlow").checked;
+    }
+    if (p.kind === "cooler") {
+      p.fanCount = num("customFans");
+      p.fanPart = $<HTMLSelectElement>("customFanPart").value;
+      if (p.coolerType === "air") {
+        p.towers = num("customTowers");
+        p.finDepth = num("customFin") / 1000;
+        p.finStart = num("customFinStart") / 1000;
+      }
+    }
     if (p.kind === "case") {
+      p.chamber = num("customChamber") / 1000;
+      p.shroud = num("customShroud") / 1000;
+      p.clearance = num("customGpuMax") / 1000;
+      p.coolerClearance = num("customCoolerMax") / 1000;
       p.mounts = JSON.parse($<HTMLTextAreaElement>("customMounts").value);
       if (
         !Array.isArray(p.mounts) ||
@@ -316,7 +379,7 @@ function saveCustom() {
     config.custom[p.id] = p;
     if (p.kind === "fan") config.fans[selectedFan].part = p.id;
     else config.parts[p.kind] = p.id;
-    const normalized = normalize(config);
+    const normalized = syncCoolerFans(normalize(config));
     $<HTMLDialogElement>("customDialog").close();
     apply(normalized);
   } catch (error) {
@@ -347,6 +410,7 @@ function configNumber(id: string, v: number) {
   } else if (id === "cpuW") c.load.cpu = v;
   else if (id === "gpuW") c.load.gpu = v;
   else if (id === "otherW") c.load.other = v;
+  else if (id === "coolerRPM") c.coolerFanRPM = v;
   else if (id.startsWith("room")) {
     const axis = { roomX: 0, roomY: 1, roomZ: 2 }[id];
     if (axis !== undefined) r.size[axis] = v;
@@ -382,7 +446,11 @@ document.addEventListener("change", (e) => {
   const el = e.target as HTMLInputElement;
   if (el.dataset.part) {
     config.parts[el.dataset.part as keyof SceneConfig["parts"]] = el.value;
-    apply(config);
+    // Keep the AIO on a radiator position this case actually has, then put its own fans on that radiator.
+    const groups = (part(config, config.parts.case).mounts || []).filter((m) => m.radiator).map((m) => groupOf(m.id));
+    if (groups.length && !groups.includes(config.radiatorMount))
+      config.radiatorMount = groups.includes("top") ? "top" : groups[0];
+    apply(syncCoolerFans(config));
   }
   switch (el.id) {
     case "preset":
@@ -394,8 +462,8 @@ document.addEventListener("change", (e) => {
       apply(config);
       break;
     case "radiatorMount":
-      config.radiatorMount = el.value as any;
-      apply(config);
+      config.radiatorMount = el.value;
+      apply(syncCoolerFans(config));
       break;
     case "fanSelect":
       selectedFan = +el.value;
@@ -585,10 +653,9 @@ document.addEventListener("click", (e) => {
       break;
     }
     case "compatibleLayout": {
-      const g = geometry(config),
-        aio = part(config, config.parts.cooler).coolerType === "aio";
+      const g = geometry(config);
       config.fans = g.mounts
-        .filter((m) => !m.id.startsWith("top") || (aio && ["top0", "top1"].includes(m.id)))
+        .filter((m) => !m.id.startsWith("top"))
         .map((m) => ({
           id: m.id,
           part:
@@ -599,7 +666,7 @@ document.addEventListener("click", (e) => {
           enabled: true,
         }));
       selectedFan = 0;
-      apply(config);
+      apply(syncCoolerFans(config));
       break;
     }
     case "runDetailed":

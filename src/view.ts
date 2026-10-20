@@ -142,6 +142,26 @@ export class LabView {
     parent.add(mesh);
     return mesh;
   }
+  fan(pos: V3, normal: V3, size: number, thickness: number, rpm: number, ring: string) {
+    const group = new THREE.Group();
+    group.position.set(...pos);
+    group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...normal).normalize());
+    this.box(group, [-size / 2, -size / 2, -thickness / 2], [size, size, thickness], rpm ? "#344f39" : "#273b34", 0.48);
+    group.add(new THREE.Mesh(new THREE.TorusGeometry(size * 0.43, size * 0.025, 6, 32), this.mat(ring)));
+    const blades = new THREE.Group();
+    for (let i = 0; i < 7; i++) {
+      const blade = new THREE.Mesh(
+          new THREE.CircleGeometry(size * 0.15, 12),
+          this.mat(rpm ? "#9eb77c" : "#52644e", 0.8),
+        ),
+        theta = (i * Math.PI * 2) / 7;
+      blade.position.set(Math.cos(theta) * size * 0.22, Math.sin(theta) * size * 0.22, 0);
+      blades.add(blade);
+    }
+    blades.userData.rpm = rpm;
+    group.add(blades);
+    this.pcGroup.add(group);
+  }
   label(text: string, pos: V3, color = "#d5e6bb", scale = 0.4) {
     const can = document.createElement("canvas");
     can.width = 512;
@@ -279,7 +299,6 @@ export class LabView {
     this.root.add(this.deskGroup);
     this.pcGroup.position.set(...this.g.origin);
     this.pcGroup.userData.pc = true;
-    const ca = part(c, c.parts.case);
     this.box(this.pcGroup, [0, 0, 0], [this.g.size[0], 0.012, this.g.size[2]], "#202f2a");
     this.box(this.pcGroup, [0, this.g.size[1] - 0.012, 0], [this.g.size[0], 0.012, this.g.size[2]], "#30483b");
     const edge = new THREE.LineSegments(
@@ -289,6 +308,7 @@ export class LabView {
     edge.position.set(...(this.g.size.map((v) => v / 2) as V3));
     this.pcGroup.add(edge);
     for (const b of this.g.boxes) {
+      if (b.ghost) continue;
       const colors: Record<string, string> = {
         gpu: "#7094b8",
         board: "#25374a",
@@ -301,59 +321,37 @@ export class LabView {
       };
       const mesh = this.box(this.pcGroup, b.min, b.size, colors[b.kind] || "#526b56", 1);
       mesh.userData.part = b.kind;
-      if (b.kind === "gpu" && b.id.includes("fins")) {
-        for (let x = b.min[0] + 0.008; x < b.min[0] + b.size[0]; x += 0.012)
-          this.box(this.pcGroup, [x, b.min[1], b.min[2] - 0.001], [0.001, b.size[1], b.size[2]], "#8a9a76");
-      }
-    }
-    if (ca.id === "h6") {
-      this.box(this.pcGroup, [0.01, 0.04, 0.21], [0.15, 0.095, 0.067], "#283d33");
-      this.box(this.pcGroup, [0.23, 0.14, 0.235], [0.1, 0.06985, 0.0068], "#6d795d");
+      // Rough fin texture: GPU and radiator fins run across the airflow, tower fins are stacked plates.
+      const fins = (axis: number, pitch: number) => {
+        for (let t = b.min[axis] + pitch / 2; t < b.min[axis] + b.size[axis]; t += pitch) {
+          const min = [...b.min] as V3,
+            size = [...b.size] as V3;
+          min[axis] = t;
+          size[axis] = 0.0008;
+          min[axis === 2 ? 0 : 2] -= 0.0008;
+          this.box(this.pcGroup, min, size, "#8a9a76");
+        }
+      };
+      if (b.kind === "gpu" && b.porous) fins(0, 0.012);
+      if (b.id === "radiator") fins(b.size[0] >= b.size[2] ? 0 : 2, 0.01);
+      if (b.id.startsWith("cooler-tower")) fins(2, 0.008);
     }
     for (const f of c.fans) {
       const mount = this.g.mounts.find((m) => m.id === f.mount);
       if (!mount) continue;
-      const fp = part(c, f.part),
-        size = fp.size[0],
-        group = new THREE.Group();
-      group.position.set(...mount.position);
-      group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...mount.normal).normalize());
-      this.box(
-        group,
-        [-size / 2, -size / 2, -fp.size[1] / 2],
-        [size, size, fp.size[1]],
-        f.enabled ? "#344f39" : "#273b34",
-        0.48,
+      const fp = part(c, f.part);
+      this.fan(
+        mount.position,
+        mount.normal,
+        fp.size[0],
+        fp.size[1],
+        f.enabled ? f.rpm : 0,
+        f.intake ? "#afd77e" : "#dfa47c",
       );
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(size * 0.43, size * 0.025, 6, 32),
-        this.mat(f.intake ? "#afd77e" : "#dfa47c"),
-      );
-      group.add(ring);
-      const blades = new THREE.Group();
-      for (let i = 0; i < 7; i++) {
-        const blade = new THREE.Mesh(
-          new THREE.CircleGeometry(size * 0.15, 12),
-          this.mat(f.enabled ? "#9eb77c" : "#52644e", 0.8),
-        );
-        const theta = (i * Math.PI * 2) / 7;
-        blade.position.set(Math.cos(theta) * size * 0.22, Math.sin(theta) * size * 0.22, 0);
-        blades.add(blade);
-      }
-      blades.userData.rpm = f.enabled ? f.rpm : 0;
-      group.add(blades);
-      this.pcGroup.add(group);
     }
-    for (const [x, z] of [
-      [0.08, 0.04],
-      [0.18, 0.04],
-      [0.28, 0.04],
-    ]) {
-      const fan = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.002, 5, 24), this.mat("#bdd398"));
-      fan.rotation.x = Math.PI / 2;
-      fan.position.set(x, this.g.gpu[1] - 0.035, z + 0.07);
-      this.pcGroup.add(fan);
-    }
+    const gpuRPM = 600 + c.load.gpu * 2;
+    for (const f of this.g.gpuFans) this.fan(f.pos, f.normal, f.size, 0.012, gpuRPM, "#bdd398");
+    for (const f of this.g.coolerFans) this.fan(f.pos, f.normal, f.size, 0.025, c.coolerFanRPM, "#c9b8e0");
     if (part(c, c.parts.cooler).coolerType === "aio") {
       const a = new THREE.Vector3(...this.g.cpu),
         b = new THREE.Vector3(...this.g.radiator);
@@ -499,8 +497,11 @@ export class LabView {
       }
       const m = this.g.mounts.find((m) => m.id === f?.mount);
       if (m) {
-        const offset = f?.intake ? -0.04 : 0.035;
-        p = m.position.map((v, i) => v + this.g.origin[i] + m.normal[i] * offset) as V3;
+        // Seed one solver cell inside the case past the fan face: closer in, the wall cells carry almost no
+        // velocity and outside the case the particle starts next to the solid PC block in the room grid.
+        const f0 = this.snapshot?.pc,
+          cell = f0 ? Math.max(...f0.size.map((s, i) => s / f0.n[i])) : 0.03;
+        p = m.position.map((v, i) => v + this.g.origin[i] + m.normal[i] * (0.0125 + cell)) as V3;
       } else p = [this.g.origin[0] + 0.1, this.g.origin[1] + 0.1, this.g.origin[2] - 0.04];
       if (this.focusMode === "room" && this.emitter === "auto" && Math.random() < 0.45) {
         const exhaust = this.config.fans.filter((f) => f.enabled && !f.intake),
