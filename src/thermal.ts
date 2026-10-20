@@ -1,3 +1,47 @@
-export interface ThermalNodes {cpu:number;sink:number;gpu:number;gpuSink:number;}
-export function thermalStep(nodes:ThermalNodes,dt:number,cpuW:number,gpuW:number,airCPU:number,airGPU:number,cpuR:number,gpuR:number,flowFactor=1,aio=true,capacities=[35,aio?650:450,65,1300]){const [cc,cs,cg,cgs]=capacities;const qc=(nodes.cpu-nodes.sink)/.08,qg=(nodes.gpu-nodes.gpuSink)/.025,ca=(nodes.sink-airCPU)/(Math.max(.015,cpuR-.08)/flowFactor),ga=(nodes.gpuSink-airGPU)/(Math.max(.015,gpuR-.025)/flowFactor);nodes.cpu+=dt*(cpuW-qc)/cc;nodes.sink+=dt*(qc-ca)/cs;nodes.gpu+=dt*(gpuW-qg)/cg;nodes.gpuSink+=dt*(qg-ga)/cgs;return{cpuToAir:ca,gpuToAir:ga,stored:cc*nodes.cpu+cs*nodes.sink+cg*nodes.gpu+cgs*nodes.gpuSink};}
-export function thermalEnergy(n:ThermalNodes,ambient:number,aio=true,capacities=[35,aio?650:450,65,1300]){return capacities[0]*(n.cpu-ambient)+capacities[1]*(n.sink-ambient)+capacities[2]*(n.gpu-ambient)+capacities[3]*(n.gpuSink-ambient);}
+export interface ThermalNodes {
+  cpu: number;
+  sink: number;
+  gpu: number;
+  gpuSink: number;
+}
+export function thermalStep(
+  nodes: ThermalNodes,
+  dt: number,
+  cpuW: number,
+  gpuW: number,
+  airCPU: number,
+  airGPU: number,
+  cpuR: number,
+  gpuR: number,
+  flowFactor = 1,
+  aio = true,
+  capacities = [35, aio ? 650 : 450, 65, 1300],
+) {
+  const [cc, cs, cg, cgs] = capacities;
+  const qc = (nodes.cpu - nodes.sink) / 0.08,
+    qg = (nodes.gpu - nodes.gpuSink) / 0.025,
+    ca = (nodes.sink - airCPU) / (Math.max(0.015, cpuR - 0.08) / flowFactor),
+    ga = (nodes.gpuSink - airGPU) / (Math.max(0.015, gpuR - 0.025) / flowFactor);
+  nodes.cpu += (dt * (cpuW - qc)) / cc;
+  nodes.sink += (dt * (qc - ca)) / cs;
+  nodes.gpu += (dt * (gpuW - qg)) / cg;
+  nodes.gpuSink += (dt * (qg - ga)) / cgs;
+  return {
+    cpuToAir: ca,
+    gpuToAir: ga,
+    stored: cc * nodes.cpu + cs * nodes.sink + cg * nodes.gpu + cgs * nodes.gpuSink,
+  };
+}
+export function thermalEnergy(
+  n: ThermalNodes,
+  ambient: number,
+  aio = true,
+  capacities = [35, aio ? 650 : 450, 65, 1300],
+) {
+  return (
+    capacities[0] * (n.cpu - ambient) +
+    capacities[1] * (n.sink - ambient) +
+    capacities[2] * (n.gpu - ambient) +
+    capacities[3] * (n.gpuSink - ambient)
+  );
+}

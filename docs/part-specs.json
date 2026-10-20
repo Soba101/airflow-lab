@@ -1,0 +1,670 @@
+{
+  "_meta": {
+    "compiled": "2026-10-21",
+    "units": "millimetres unless the key says otherwise (CFM, mmH2O, RPM as named)",
+    "statusValues": {
+      "primary": "number taken from a manufacturer page/PDF (read directly, or quoted in a search result of the official page)",
+      "secondary": "number from a retailer or review only; manufacturer value not reachable",
+      "mixed": "some fields primary, some secondary; see notes and secondarySources"
+    },
+    "caveats": [
+      "Several manufacturer sites (gigabyte.com, nvidia.com sub-pages, amd.com, nzxt support, arctic.de spec tab, Noctua HTML) returned 403/429/truncated pages to the fetcher; where so, numbers came from search-result excerpts of the official page and are flagged in notes.",
+      "A null means the number was not found in any source reached; it was NOT estimated.",
+      "Orientation convention used for coolers: widthMm = side-to-side across the motherboard, overallDepthMm = front-to-back along the fan axis incl. fans, heightMm = above the CPU socket."
+    ]
+  },
+  "gpus": [
+    {
+      "name": "GIGABYTE GeForce RTX 5090 WINDFORCE OC 32G (GV-N5090WF3OC-32GD)",
+      "lengthMm": 342,
+      "heightMm": 150,
+      "thicknessMm": 65,
+      "slots": 3.25,
+      "fanCount": 3,
+      "fanSizeMm": null,
+      "flowThrough": null,
+      "source": "https://www.gigabyte.com/Graphics-Card/GV-N5090WF3OC-32GD/sp",
+      "secondarySources": [
+        "https://www.buildcores.com/products/GPU/90ufj8frc/Gigabyte-WINDFORCE-GeForce-RTX-5090-32GB-GDDR7",
+        "https://www.cclonline.com/gv-n5090wf3oc-32gd-gigabyte-geforce-rtx-5090-windforce-32gb-oc-graphics-card-477529/",
+        "https://www.paradigit.ie/outlet-gigabyte-geforce-rtx-5090-windforce-oc-32-gb/80071832/product"
+      ],
+      "status": "mixed",
+      "notes": "Gigabyte's size line reads 342 x 150 x 65 mm (L x W x H): W=150 is bracket-to-top height, H=65 is thickness. Official page returned 403 to the fetcher; values come from a search excerpt of the official page and agree with retailers. slots 3.25 is BuildCores (CCL says 3.3; Paradigit says 3.5) = secondary. fanCount 3 is secondary (retailers). fanSizeMm and flowThrough not stated anywhere reached -> null. | Follow-up research: fan size still not found. Gigabyte marketing mentions an extended heatsink air passes through (Screen cooling), which hints at a shortened PCB, but no measured PCB length was found, so flowThrough stays null. Thickness 65 vs 70 mm conflicts between listings (secondary)."
+    },
+    {
+      "name": "NVIDIA GeForce RTX 5090 Founders Edition",
+      "lengthMm": 304,
+      "heightMm": 137,
+      "thicknessMm": 40,
+      "slots": 2,
+      "fanCount": 2,
+      "fanSizeMm": 115,
+      "flowThrough": true,
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/",
+      "secondarySources": [
+        "https://tomshardware.com/pc-components/gpus/nvidia-geforce-rtx-5090-review/2",
+        "https://overclock3d.net/news/gpu-displays/nvidias-rtx-5090-founders-edition-is-an-engineering-marvel/",
+        "https://lanoc.org/review/video-cards/nvidia-rtx-5090-founders-edition?start=2"
+      ],
+      "status": "mixed",
+      "notes": "Length 304, height 137 (NVIDIA labels it 'Width') and 2-slot are from NVIDIA's page, which also markets 'Double Flow Through' design (flowThrough=true). The same page's installation text mentions 3-slot (61 mm) clearance, which looks like template text shared with 40-series FE pages; not reconciled. thicknessMm 40 and fanCount 2 are secondary (Tom's Hardware / overclock.net); a Japanese Gizmodo review quotes 50 mm. Fan diameter not found -> null. | Follow-up research: LANOC measured both fans 115 mm edge to edge, 304 x 40 mm, double flow-through (secondary); thickness 40 confirmed."
+    },
+    {
+      "name": "NVIDIA GeForce RTX 4080 SUPER Founders Edition",
+      "lengthMm": 304,
+      "heightMm": 137,
+      "thicknessMm": 61,
+      "slots": 3,
+      "fanCount": 2,
+      "fanSizeMm": 115,
+      "flowThrough": true,
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4080-family/",
+      "secondarySources": [
+        "https://lanoc.org/review/video-cards/nvidia-rtx-4080-super-founders-edition?start=2",
+        "https://hothardware.com/reviews/nvidia-geforce-rtx-4080-super-review"
+      ],
+      "status": "mixed",
+      "notes": "NVIDIA page: 304 mm, 'Width' 137 mm (= card height), 3-slot, 61 mm. Fan count 2, fan ~115 mm ring-to-ring (118 mm opening) and the pass-through design are secondary (LANOC, HotHardware). Reviewer-measured sizes vary slightly (LANOC 310 x 140 x 61). | Follow-up research: LANOC: 118 mm opening / 115 mm ring-to-ring (SUPER); the original 4080 FE was quoted at 110 mm."
+    },
+    {
+      "name": "NVIDIA GeForce RTX 4090 Founders Edition",
+      "lengthMm": 304,
+      "heightMm": 137,
+      "thicknessMm": 61,
+      "slots": 3,
+      "fanCount": 2,
+      "fanSizeMm": 115,
+      "flowThrough": true,
+      "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/",
+      "secondarySources": [
+        "https://www.guru3d.com/review/geforce-rtx-4090-founder-edition-review/page-3/",
+        "https://lanoc.org/review/video-cards/nvidia-rtx-4090-founders-edition?start=2",
+        "https://www.tomshardware.com/news/nvidia-rtx-4090-unboxing"
+      ],
+      "status": "mixed",
+      "notes": "NVIDIA page: 304 mm, 'Width' 137 mm (= height), 3-slot (61 mm). Two fans (one pushes across the PCB, one pulls through the fin stack at the PCB-free end) and ~115 mm size are from reviewers (Guru3D, LANOC, Tom's Hardware: 305x136x61 measured). One spec listing says 'triple fan' - judged an error. NVIDIA's own page gives no fan count."
+    },
+    {
+      "name": "AMD Radeon RX 7900 XTX (AMD reference)",
+      "lengthMm": 287,
+      "heightMm": 123,
+      "thicknessMm": 50,
+      "slots": 2.5,
+      "fanCount": 3,
+      "fanSizeMm": 84,
+      "flowThrough": false,
+      "source": "https://www.amd.com/en/products/graphics/desktops/radeon/7000-series/amd-radeon-rx-7900xtx.html",
+      "secondarySources": [
+        "https://tomshardware.com/reviews/amd-radeon-rx-7900-xtx-and-xt-review-shooting-for-the-top/2",
+        "https://igorslab.de/en/amd-radeon-rx-7900xtx-and-rx-7900xt-enthuellt-mug-shots-and-weigh-before-the-fight/2",
+        "https://lanoc.org/review/video-cards/amd-radeon-rx-7900-xtx?start=2"
+      ],
+      "status": "mixed",
+      "notes": "AMD lists length 287 mm and 2.5 slots (primary). heightMm 123 and thicknessMm 51.5 are secondary (Tom's Hardware 287 x 123 x 51.5; Igor's Lab measured ~115 mm height from slot edge). Fan count/size and flow-through not stated in any source reached -> null. | Follow-up research: LANOC measured (secondary): 3 fans, 84 mm blade (87 mm opening), 50 mm thick, PCB runs the full card length (flowThrough=false). fanCount, fanSizeMm, flowThrough and thickness are secondary; thickness 50 (LANOC) vs 51.5 (Tom's Hardware)."
+    },
+    {
+      "name": "ASUS Dual GeForce RTX 4060 OC Edition 8GB (DUAL-RTX4060-O8G)",
+      "lengthMm": 227.2,
+      "heightMm": 123.24,
+      "thicknessMm": 49.6,
+      "slots": 2.5,
+      "fanCount": 2,
+      "fanSizeMm": 90,
+      "flowThrough": null,
+      "source": "https://www.asus.com/motherboards-components/graphics-cards/dual/dual-rtx4060-o8g/techspec/",
+      "secondarySources": [
+        "https://guru3d.com/story/asus-releases-dual-fan-asus-dual-rtx4060-o8g-graphics-card-with-compact-design",
+        "https://directcomputers.co.uk/products/asus-dual-rtx4060-oc-pcie4-8gb-ddr6-hdmi-3-dp-2535mhz-clock-overclocked",
+        "https://lanoc.org/review/video-cards/asus-dual-rtx-4060-8gb?showall=1",
+        "https://www.tomshardware.com/reviews/nvidia-geforce-rtx-4060-review-asus-dual/3"
+      ],
+      "status": "mixed",
+      "notes": "ASUS spec page (fetched): 227.2 x 123.24 x 49.6 mm, 2.5 slot (ASUS labels the 123.24 as width = bracket-to-top height). Two Axial-tech fans per retailers (secondary). Fan diameter not found -> null; flowThrough not stated -> null. The DUAL-RTX4060-O8G-V2 is a different, smaller card (202.2 x 120.3 x 40.1, 2-slot) - do not mix. | Follow-up research: fan size conflicts: Tom's 89, LANOC measured 90, Guru3D 95; 90 used (secondary). flowThrough left null: LANOC says the PCB ends short and one fan can partially blow through the heatsink, i.e. partial."
+    }
+  ],
+  "airCoolers": [
+    {
+      "name": "Noctua NH-U12A",
+      "overallDepthMm": 112,
+      "widthMm": 125,
+      "heightMm": 158,
+      "towers": 1,
+      "fanCount": 2,
+      "fanSizeMm": 120,
+      "fanThicknessMm": 25,
+      "heatsinkDepthMm": 58,
+      "heatsinkWidthMm": 125,
+      "heatsinkHeightMm": 158,
+      "ramClearanceMm": null,
+      "source": "https://cdn.noctua.at/media/noctua_nh_u12a_infosheet_en_web.pdf",
+      "secondarySources": [
+        "https://noctua.at/en/nh-u12a/specification"
+      ],
+      "status": "primary",
+      "notes": "Noctua infosheet (read directly): heatsink 158 x 125 x 58 mm, with 2x NF-A12x25 PWM 158 x 125 x 112 mm; fans 120x120x25. Noctua's width (125) includes fan clips. 7 heatpipes. No RAM clearance figure on the infosheet -> null. | Follow-up research: Noctua FAQ (read via search summary) says 100% RAM compatibility, i.e. no overhang over RAM slots on AM4/AM5/LGA115x, so no numeric limit exists; on LGA2066 RAM must be <=42 mm. ramClearanceMm stays null. https://www.noctua.at/en/support/faqs/what-is-the-ram-clearance-of-my-noctua-cpu-cooler"
+    },
+    {
+      "name": "Noctua NH-D15 (original, not G2)",
+      "overallDepthMm": 161,
+      "widthMm": 150,
+      "heightMm": 165,
+      "towers": 2,
+      "fanCount": 2,
+      "fanSizeMm": 140,
+      "fanThicknessMm": 25,
+      "heatsinkDepthMm": 135,
+      "heatsinkWidthMm": 150,
+      "heatsinkHeightMm": 165,
+      "ramClearanceMm": 64,
+      "source": "https://cdn.noctua.at/media/noctua_nh_d15_infosheet_en_web.pdf",
+      "secondarySources": [
+        "https://www.noctua.at/en/products/nh-d15/specifications"
+      ],
+      "status": "primary",
+      "notes": "Noctua infosheet (read directly): heatsink 165 x 150 x 135 mm, with 2x NF-A15 PWM 165 x 150 x 161 mm; NF-A15 is 140x150x25 (fits 120 mm hole pattern). ramClearanceMm 64 = single-fan mode (front fan fitted); in dual-fan mode only standard RAM up to 32 mm fits unless the front fan is raised in cases with >165 mm cooler clearance (which raises total height). A search excerpt of Noctua's HTML page quoted 168/160 mm heights, which conflicts with the infosheet; infosheet used."
+    },
+    {
+      "name": "DeepCool AK620",
+      "overallDepthMm": 138,
+      "widthMm": 129,
+      "heightMm": 160,
+      "towers": 2,
+      "fanCount": 2,
+      "fanSizeMm": 120,
+      "fanThicknessMm": 25,
+      "heatsinkDepthMm": 110,
+      "heatsinkWidthMm": 127,
+      "heatsinkHeightMm": 157,
+      "ramClearanceMm": 43,
+      "source": "https://www.deepcool.com/products/Cooling/cpuaircoolers/AK620-High-Performance-CPU-Cooler-1700-AM5/2021/13067.shtml",
+      "secondarySources": [
+        "https://www.tech-critter.com/deepcool-ak620-cpu-cooler-review/"
+      ],
+      "status": "primary",
+      "notes": "DeepCool page (fetched): product 129x138x160 (L x W x H), heatsink 127x110x157, fan 120x120x25, 6x 6 mm heatpipes. DeepCool's L/W/H axis meaning is not defined on the page; mapping 138 = front-to-back with front fan and 129 = side-to-side is my inference from heatsink 110 + 25 mm fan + clips = ~138. ramClearanceMm 43 is with both fans; 59 mm in single-fan config. AK620 DIGITAL is 162 mm tall. | Follow-up research: a review (funkykit) labels the dimensions L129 x W138 x H160, consistent with my mapping; DeepCool's manual not checked."
+    },
+    {
+      "name": "Thermalright Peerless Assassin 120 SE",
+      "overallDepthMm": 135,
+      "widthMm": 125,
+      "heightMm": 155,
+      "towers": 2,
+      "fanCount": 2,
+      "fanSizeMm": 120,
+      "fanThicknessMm": 25,
+      "heatsinkDepthMm": 110,
+      "heatsinkWidthMm": 125,
+      "heatsinkHeightMm": 155,
+      "ramClearanceMm": null,
+      "source": "https://www.thermalright.com/product/peerless-assassin-120-se/",
+      "secondarySources": [
+        "https://digitec.ch/en/s1/product/thermalright-peerless-assassin-120-se-155-mm-cpu-coolers-35854223",
+        "https://www.paradigit.ie/thermalright-peerless-assassin-120-se/21885366/product",
+        "https://download.thermalright.com/manuals/PEERLESSASSASSIN120SE.pdf"
+      ],
+      "status": "mixed",
+      "notes": "Thermalright page (fetched): heatsink L125 x W110 x H155, fan TL-C12C 120x120x25, dual-tower category. overallDepthMm 135 is secondary (Digitec; another retailer says 138). Fan count 2 is secondary (retailer listings; page didn't state). Page gives no RAM clearance number ('leave clearance for tall memory'), so null. The newer V3 variant uses different fans (TL-P12) and weight. | Follow-up research: fan count 2 now confirmed by the manufacturer manual parts list (B Fan x2). Official overall depth and RAM clearance still not published (forum RAM figures 35-42 mm, unverified)."
+    },
+    {
+      "name": "Cooler Master Hyper 212 Black Edition",
+      "overallDepthMm": null,
+      "widthMm": 123,
+      "heightMm": 158.8,
+      "towers": 1,
+      "fanCount": 1,
+      "fanSizeMm": 120,
+      "fanThicknessMm": 25,
+      "heatsinkDepthMm": 77,
+      "heatsinkWidthMm": 123,
+      "heatsinkHeightMm": 158.8,
+      "ramClearanceMm": null,
+      "source": "https://www.coolermaster.com/en-global/products/hyper-212-black-edition/",
+      "secondarySources": [],
+      "status": "primary",
+      "notes": "Cooler Master page (fetched) lists 123 x 77 x 158.8 mm (L x W x H) without saying what it covers, and a 120x120x25 fan; 4 heatpipes, so single tower. 123 mapped to side-to-side and 77 to heatsink depth is inference. overallDepthMm (with fan), fanCount and ramClearanceMm not stated on the page -> null (the product is believed to ship with one fan but that is not sourced here; verify before using). | Follow-up research: fanCount 1 is secondary (Overclockers listing for the R2). Axis mapping and overall depth still unsourced."
+    }
+  ],
+  "aios": [
+    {
+      "name": "Corsair iCUE H100i RGB PRO XT (240 mm, CW-9060043-WW)",
+      "radiatorLengthMm": 277,
+      "radiatorWidthMm": 120,
+      "radiatorThicknessMm": 27,
+      "fanCount": 2,
+      "fanSizeMm": 120,
+      "fanThicknessMm": 25,
+      "fanModel": "ML120 PWM (ML Series)",
+      "fanMaxRpm": 2400,
+      "fanMaxAirflowCfm": 75,
+      "fanStaticPressureMmH2O": 4.2,
+      "source": "https://www.corsair.com/us/en/p/cpu-coolers/cw-9060043-ww/icue-h100i-rgb-pro-xt-liquid-cpu-cooler-cw-9060043-ww",
+      "secondarySources": [
+        "https://pccasegear.com/products/49247/corsair-icue-h100i-rgb-pro-xt-240mm-aio-cpu-cooler",
+        "https://www.guru3d.com/review/corsair-h100i-rgb-pro-xt-liquid-cooler-review/page-2/",
+        "https://www.corsair.com/us/en/p/refurb-cpu-coolers/cw-9060043-ww-rf/icue-h100i-rgb-pro-xt-liquid-cpu-cooler-refurbished-cw-9060043-ww-rf"
+      ],
+      "status": "mixed",
+      "notes": "Corsair page (fetched): ML120 PWM x2, 2400 RPM, 75 CFM, 4.2 mmH2O, 240 mm aluminum radiator. Radiator 277 x 120 x 27 mm is secondary (retailers/reviews); Corsair's page gives no radiator dimensions. Fan 120 x 25 mm from Corsair's refurb listing / ML120 fan page. Max values are at full speed. | Follow-up research: one review says 276 mm radiator length; 277 kept."
+    },
+    {
+      "name": "NZXT Kraken 280 (2023, RL-KN280-B1)",
+      "radiatorLengthMm": 315,
+      "radiatorWidthMm": 143,
+      "radiatorThicknessMm": 30,
+      "fanCount": 2,
+      "fanSizeMm": 140,
+      "fanThicknessMm": 26,
+      "fanModel": "F140P static pressure fan (2022)",
+      "fanMaxRpm": 1500,
+      "fanMaxAirflowCfm": 99.68,
+      "fanStaticPressureMmH2O": 2.75,
+      "source": "https://support.nzxt.com/hc/en-us/articles/47207322896923-Kraken-2023-Specs",
+      "secondarySources": [
+        "https://nzxt.com/products/kraken-280?variant=40575817580616",
+        "https://www.adorama.com/nzrlkn280b1.html"
+      ],
+      "status": "mixed",
+      "notes": "Radiator 315 x 143 x 30 and F140P figures (500-1500 RPM, 33.22-99.68 CFM, 0.91-2.75 mmH2O) are from NZXT's support/product pages as quoted in search results (pages themselves returned 403/404 to the fetcher). Fan thickness 26 mm is secondary (Adorama). A Best Buy listing quotes 1800 RPM / 90.76 CFM, judged a data error. Do not confuse with Kraken Plus 280 (321 x 140 x 27) or Kraken Elite 280 (321 x 137 x 27)."
+    },
+    {
+      "name": "Arctic Liquid Freezer III 360 (non-Pro, ACFRE00136A)",
+      "radiatorLengthMm": 398,
+      "radiatorWidthMm": 120,
+      "radiatorThicknessMm": 38,
+      "fanCount": 3,
+      "fanSizeMm": 120,
+      "fanThicknessMm": 25,
+      "fanModel": "P12 PWM",
+      "fanMaxRpm": 1800,
+      "fanMaxAirflowCfm": 56.3,
+      "fanStaticPressureMmH2O": 2.2,
+      "source": "https://www.arctic.de/us/Liquid-Freezer-III-360/ACFRE00136A",
+      "secondarySources": [
+        "https://www.ocinside.de/review/arctic_liquid_freezer_iii_pro_360_argb/2/",
+        "https://www.arctic.de/en/Liquid-Freezer-III-360/ACFRE00136A"
+      ],
+      "status": "mixed",
+      "notes": "Radiator 398 x 120 x 38, 3x P12 PWM 200-1800 rpm, 56.30 CFM, 2.20 mmH2O are from Arctic's product page as quoted in a search result (spec tab truncated in the fetcher). Fan thickness 25 mm is NOT on that excerpt: it is the P12 Pro 120x120x25 from OCinside (secondary); P12 standard assumed the same family size - verify. The Pro model is different (600-3000 rpm, 77 CFM, 6.9 mmH2O); the A-RGB variant is 200-2000 rpm, 48.82 CFM, 1.85 mmH2O. Also has a 60 mm VRM fan. | Follow-up research: Arctic spec sheet PDF https://www.arctic.de/media/16/63/19/1708429821/Spec_Sheet_Liquid_Freezer_III_360_Black_EN.pdf confirms 398x120x38, 3x P12 PWM, 200-1800 rpm, 56.30 CFM, 2.20 mmH2O, but gives no fan thickness; 25 mm remains unverified."
+    },
+    {
+      "name": "Corsair iCUE H150i ELITE CAPELLIX XT (360 mm, black CW-9060070-WW)",
+      "radiatorLengthMm": 397,
+      "radiatorWidthMm": 120,
+      "radiatorThicknessMm": 27,
+      "fanCount": 3,
+      "fanSizeMm": 120,
+      "fanThicknessMm": 25,
+      "fanModel": "iCUE AF120 RGB ELITE PWM",
+      "fanMaxRpm": 2100,
+      "fanMaxAirflowCfm": 65.57,
+      "fanStaticPressureMmH2O": 2.68,
+      "source": "https://www.corsair.com/us/en/p/cpu-coolers/cw-9060070-ww/icue-h150i-elite-capellix-xt-liquid-cpu-cooler-cw-9060070-ww",
+      "secondarySources": [
+        "https://www.ldlc.com/en/product/PB00542077.html",
+        "https://www.microcenter.com/quickView/662685/corsair-icue-h150i-elite-capellix-xt-360mm-all-in-one-liquid-cpu-cooling-kit",
+        "https://www.memoryexpress.com/Products/MX00124003"
+      ],
+      "status": "mixed",
+      "notes": "Corsair page (fetched): 3x AF RGB ELITE PWM 120 mm, 550-2100 RPM, 13.8-65.57 CFM, 0.17-2.68 mmH2O; product length 397 and width 119.6 (units unstated, taken as mm). Radiator thickness 27 mm and fan thickness 25 mm are secondary (LDLC / retailer listings quoting Corsair-style specs). Chosen variant: H150i ELITE CAPELLIX XT (current successor lines are H150i ELITE LCD XT / iCUE LINK H150i)."
+    }
+  ],
+  "cases": [
+    {
+      "name": "NZXT H6 Flow",
+      "externalDepthMm": 415,
+      "externalHeightMm": 435,
+      "externalWidthMm": 287,
+      "motherboardSupport": [
+        "ATX",
+        "Micro-ATX",
+        "Mini-ITX"
+      ],
+      "maxGpuLengthMm": 365,
+      "maxCpuCoolerHeightMm": 163,
+      "maxRadiator": {
+        "front": null,
+        "top": {
+          "size": "360 mm",
+          "maxThicknessMm": 30,
+          "note": "page: 30 mm radiator thickness; FAQ says ~60 mm radiator+fan total"
+        },
+        "side": null,
+        "bottom": null,
+        "rear": {
+          "size": "120 mm",
+          "maxThicknessMm": null
+        }
+      },
+      "fanPositions": {
+        "front": {
+          "count": 3,
+          "sizesMm": [
+            120
+          ],
+          "note": "NZXT calls this position 'front-right'; the angled intake chamber"
+        },
+        "top": {
+          "count": 3,
+          "sizesMm": [
+            120
+          ],
+          "alternative": "2 x 140"
+        },
+        "side": null,
+        "bottom": {
+          "count": 2,
+          "sizesMm": [
+            140
+          ]
+        },
+        "rear": {
+          "count": 1,
+          "sizesMm": [
+            120
+          ]
+        }
+      },
+      "includedFans": "3 x F120Q (Case Version), 120 mm, front-right; 1200 +/-240 RPM, 62.18 CFM, 1.05 mmH2O, 3-pin DC",
+      "psuShroud": null,
+      "psuMaxLengthMm": 200,
+      "source": "https://nzxt.com/product/h6-flow",
+      "secondarySources": [],
+      "status": "primary",
+      "notes": "NZXT page (fetched). Dimensions listed H x W x D 435 x 287 x 415. Page does not state a PSU shroud/basement height or whether one exists (the case is dual-chamber, but that is not sourced here) -> null. Front and bottom radiator support and rear max thickness not listed -> null. | Follow-up research: top radiator thickness conflicts: spec table 30 mm vs FAQ ~60 mm incl. fans. No side/bottom radiator support."
+    },
+    {
+      "name": "Corsair 4000D Airflow (TG, black CC-9011200-WW)",
+      "externalDepthMm": 453,
+      "externalHeightMm": 466,
+      "externalWidthMm": 230,
+      "motherboardSupport": [
+        "Mini-ITX",
+        "Micro-ATX",
+        "ATX",
+        "E-ATX (up to 305 x 277)"
+      ],
+      "maxGpuLengthMm": 360,
+      "maxCpuCoolerHeightMm": 170,
+      "maxRadiator": {
+        "front": {
+          "size": "360 / 280 / 240 mm",
+          "maxThicknessMm": null
+        },
+        "top": {
+          "size": "up to 280 mm",
+          "maxThicknessMm": null,
+          "note": "from marketing copy, not in the tech-spec table"
+        },
+        "side": null,
+        "bottom": null,
+        "rear": {
+          "size": "120 mm",
+          "maxThicknessMm": null
+        }
+      },
+      "fanPositions": {
+        "front": {
+          "count": 3,
+          "sizesMm": [
+            120
+          ],
+          "alternative": "2 x 140"
+        },
+        "top": {
+          "count": 2,
+          "sizesMm": [
+            120
+          ],
+          "alternative": "2 x 140"
+        },
+        "side": null,
+        "bottom": null,
+        "rear": {
+          "count": 1,
+          "sizesMm": [
+            120
+          ]
+        }
+      },
+      "includedFans": "2 x CORSAIR AirGuide 120 mm (position not stated on page)",
+      "psuShroud": null,
+      "psuMaxLengthMm": 220,
+      "source": "https://www.corsair.com/us/en/p/pc-cases/cc-9011200-ww/4000d-airflow-tempered-glass-mid-tower-atx-case-black-cc-9011200-ww",
+      "secondarySources": [],
+      "status": "primary",
+      "notes": "Corsair page (fetched); dimensions printed without units, taken as mm (466 H x 453 D x 230 W). Page lists a PSU shroud cover plate only as a separate accessory and gives no shroud/basement height -> null. Radiator thickness not specified."
+    },
+    {
+      "name": "Lian Li O11 Dynamic EVO",
+      "externalDepthMm": 465,
+      "externalHeightMm": 459,
+      "externalWidthMm": 285,
+      "motherboardSupport": [
+        "E-ATX (width under 280 mm)",
+        "ATX",
+        "Micro-ATX",
+        "Mini-ITX"
+      ],
+      "maxGpuLengthMm": 426,
+      "maxCpuCoolerHeightMm": 167,
+      "maxRadiator": {
+        "front": null,
+        "top": {
+          "size": "360 mm x1 or 280 mm x1",
+          "maxThicknessMm": 87.5,
+          "note": "total incl. fans"
+        },
+        "side": {
+          "size": "360 mm x1 or 280 mm x1",
+          "maxThicknessMm": null,
+          "note": "inner placement 83 mm with 120 mm fans top/bottom or 63 mm with 140 mm; outer placement 120 mm (120 mm fans) or 100 mm (140 mm fans)"
+        },
+        "bottom": {
+          "size": "360 mm x1",
+          "maxThicknessMm": 87.5,
+          "note": "total incl. fans"
+        },
+        "rear": null
+      },
+      "fanPositions": {
+        "front": null,
+        "top": {
+          "count": 3,
+          "sizesMm": [
+            120
+          ],
+          "alternative": "2 x 140"
+        },
+        "side": {
+          "count": 3,
+          "sizesMm": [
+            120
+          ],
+          "alternative": "2 x 140"
+        },
+        "bottom": {
+          "count": 3,
+          "sizesMm": [
+            120
+          ],
+          "alternative": "2 x 140"
+        },
+        "rear": {
+          "count": 1,
+          "sizesMm": [
+            120
+          ]
+        }
+      },
+      "includedFans": "none listed on the page (fans are sold separately / RGB version bundles vary)",
+      "psuShroud": null,
+      "psuMaxLengthMm": 220,
+      "source": "https://lian-li.com/product/o11-dynamic-evo/",
+      "secondarySources": [
+        "https://www.memoryexpress.com/Products/MX00120644",
+        "https://guru3d.com/review/lian-li-o11-dynamic-evo-chassis-review/page-2"
+      ],
+      "status": "primary",
+      "notes": "Lian Li page (fetched). Retailers/Guru3D disagree on some numbers (top rad 420 mm vs 360 mm; GPU 422/425/426/455.7 mm); Lian Li's page used. Drive cage takes a 60 mm fan. Page mentions no PSU shroud/basement (dual-chamber design; shroud height not sourced) -> null. No front intake position listed (front is glass). | Follow-up research: top max thickness conflicts 87.5 vs 83.5 mm total between sources; PBTech (secondary) matches the side figures."
+    },
+    {
+      "name": "Fractal Design North (Chalk White / mesh side panel, FD-C-NOR1C-03)",
+      "externalDepthMm": 447,
+      "externalHeightMm": 469,
+      "externalWidthMm": 215,
+      "motherboardSupport": [
+        "ATX",
+        "Micro-ATX",
+        "Mini-ITX"
+      ],
+      "maxGpuLengthMm": 355,
+      "maxCpuCoolerHeightMm": 145,
+      "maxRadiator": {
+        "front": {
+          "size": "120/140/240/280/360 mm",
+          "maxThicknessMm": null,
+          "note": "GPU limited to 300 mm with a 360 mm front radiator"
+        },
+        "top": {
+          "size": "120/240 mm",
+          "maxThicknessMm": null
+        },
+        "side": {
+          "size": "120/140 mm (2 fan positions)",
+          "maxThicknessMm": null
+        },
+        "bottom": null,
+        "rear": {
+          "size": "120 mm",
+          "maxThicknessMm": null
+        }
+      },
+      "fanPositions": {
+        "front": {
+          "count": 3,
+          "sizesMm": [
+            120
+          ],
+          "alternative": "2 x 140"
+        },
+        "top": {
+          "count": 2,
+          "sizesMm": [
+            120,
+            140
+          ]
+        },
+        "side": {
+          "count": 2,
+          "sizesMm": [
+            120,
+            140
+          ]
+        },
+        "bottom": null,
+        "rear": {
+          "count": 1,
+          "sizesMm": [
+            120
+          ]
+        }
+      },
+      "includedFans": "2 x Aspect 14 PWM (140 mm), installed at the front",
+      "psuShroud": null,
+      "psuMaxLengthMm": 255,
+      "source": "https://www.fractal-design.com/products/cases/north/north/",
+      "secondarySources": [
+        "https://www.pbtech.com/au/product/CHAFRD0052/Fractal-Design-North-Mesh-ATX-Mid-Tower-Case---Cha"
+      ],
+      "status": "primary",
+      "notes": "Fractal page (fetched) for the mesh-panel variant: 145 mm cooler height is with the fan bracket fitted; a retailer (secondary) says 170 mm without it and for the glass variant. Page lists dimensions L x W x H 447 x 215 x 469 and no PSU shroud/basement information -> null. Top rad 120/240 as listed; dedicated side-panel fan mounts exist for the mesh panel. | Follow-up research: a GamersNexus remark of 36 mm between shroud and fan bracket may refer to this case; unverified, shroud height stays null."
+    },
+    {
+      "name": "Fractal Design Meshify 2 Compact",
+      "externalDepthMm": 424,
+      "externalHeightMm": 475,
+      "externalWidthMm": 210,
+      "motherboardSupport": [
+        "ATX",
+        "Micro-ATX",
+        "Mini-ITX"
+      ],
+      "maxGpuLengthMm": 341,
+      "maxCpuCoolerHeightMm": 169,
+      "maxRadiator": {
+        "front": {
+          "size": "120/140/240/280/360 mm",
+          "maxThicknessMm": null,
+          "note": "retailer/Guru3D: GPU up to 360 mm with no front fan; max radiator width 145 mm"
+        },
+        "top": {
+          "size": "120/240 mm",
+          "maxThicknessMm": null,
+          "note": "retailer: 40 mm component-height limit under a top radiator"
+        },
+        "side": null,
+        "bottom": {
+          "size": "120 mm",
+          "maxThicknessMm": null,
+          "note": "retailer: only if HDD cage removed"
+        },
+        "rear": {
+          "size": "120 mm",
+          "maxThicknessMm": null
+        }
+      },
+      "fanPositions": {
+        "front": {
+          "count": 3,
+          "sizesMm": [
+            120
+          ],
+          "alternative": "2 x 140"
+        },
+        "top": {
+          "count": 2,
+          "sizesMm": [
+            120,
+            140
+          ]
+        },
+        "side": null,
+        "bottom": {
+          "count": 1,
+          "sizesMm": [
+            120
+          ]
+        },
+        "rear": {
+          "count": 1,
+          "sizesMm": [
+            120
+          ]
+        }
+      },
+      "includedFans": "Dynamic X2 GP-12 120 mm fans; exact count unclear: Fractal page names GP-12 for front and rear without a count; Guru3D says 3 pre-installed; a search excerpt of Fractal's page said 1 x 120 mm and 2 x 140 mm",
+      "psuShroud": {
+        "present": true,
+        "heightMm": null
+      },
+      "psuMaxLengthMm": 200,
+      "source": "https://www.fractal-design.com/products/cases/meshify/meshify-2-compact/White/",
+      "secondarySources": [
+        "https://www.guru3d.com/review/fractal-design-meshify2-compact-chassis-review/page-2/"
+      ],
+      "status": "mixed",
+      "notes": "Fractal page (fetched): 424 x 210 x 475 (L x W x H), 39.4 L, GPU 341, cooler 169, full-length PSU shroud hiding the drive cage (height not given -> null). PSU 200 mm (retailer: 165 mm with HDD cage + front fan). Included fan count is conflicting between sources; treat as unverified. Rad thickness not listed anywhere reached. | Follow-up research: included fans conflict: Fractal page lists Dynamic X2 GP-12 (front, no count) + 1x GP-12 rear; Custom PC says 2x 140 mm GP-14 front + 1x 120 mm GP-12 rear (secondary). Possibly a newer revision. A 60 mm radiator fits the front with one fan row (Custom PC, secondary)."
+    }
+  ],
+  "unsourced": [
+    "GIGABYTE RTX 5090 WINDFORCE OC: fanSizeMm, flowThrough (only marketing hints), exact thickness (65 vs 70)",
+    "ASUS Dual RTX 4060 OC: flowThrough (partial per LANOC)",
+    "Noctua NH-U12A: numeric ramClearanceMm (no overhang per Noctua FAQ)",
+    "Thermalright PA120 SE: ramClearanceMm; official overall depth",
+    "Cooler Master Hyper 212 Black Edition: overallDepthMm, ramClearanceMm; axis mapping",
+    "Arctic LF III 360: official fan thickness",
+    "Meshify 2 Compact: included fan count (sources conflict)",
+    "All cases: radiator max thickness mostly not published; PSU shroud heights not published"
+  ]
+}

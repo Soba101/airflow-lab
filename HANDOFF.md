@@ -79,3 +79,17 @@ Validation: npm ci completed; local Vite dev server started; all 32 tests and np
 ## Visual review — 21 October 2026
 
 Inspected deployed room and PC views in the browser. Found a cropped case focus, rear-facing motherboard view, severe shadow stripes, low contrast and oversized persistent overlays. Updated focus to fit a bounding sphere using viewport aspect/FOV, face the component side, and restore the prior room camera. Disabled artifact-prone shadows, made component envelopes opaque with distinct colors, reduced glass opacity and changed smoke to cyan-to-amber. Evidence and airflow controls now use native disclosure panels. Local H6 and 4000D views were visually checked at 1280×720; alternate preset selection works. Full phone/other-browser coverage remains outstanding. All 32 tests and production build passed before the final small-screen-height CSS adjustment; final build repeated. These are rendering changes, not improvements in physical accuracy. Issue #6 remains open for labels, scales and resolved smoke handoff.
+
+## Parametric parts and exact geometry — 21 October 2026 (branch `feat/parametric-parts`)
+
+Parts are now specs that geometry derives from, so anyone can enter their own combination:
+- Cases carry main-chamber depth, PSU shroud, GPU/cooler limits, mount rows (with radiator flags and stack limits) and fixed blocks. Catalogue: H6 Flow, 4000D Airflow, O11 Dynamic EVO, North, Meshify 2 Compact, generic mid-tower.
+- GPUs carry length/thickness/height, fan count/diameter and flow-through; the card's PCIe edge now sits on the motherboard at the selected slot (slots are measured below the board's top edge). Catalogue: 5090 WINDFORCE, 5090/4090/4080 SUPER FE, 7900 XTX reference, Dual 4060, generic.
+- Air coolers carry towers, fan count/model, fin depth and fin start height; AIOs carry radiator length/thickness/width, fan count and supplied fan. AIO fans are placed on the radiator's case mounts (`syncCoolerFans`). Catalogue: NH-U12A, NH-D15, AK620, PA120 SE, Hyper 212, H100i, Kraken 280, LF III 360, H150i, plus generics.
+- Spec sources and per-field status: `docs/part-specs.json`. Internal mount coordinates, tray depth, shroud heights, fin start heights, GPU fan diameters and all thermal resistances remain estimates.
+
+Solver: `FluidGrid.applyBoxes` rasterises exact part boxes without snapping. Solid boxes set each face's open-area fraction (projected over the face's control volume, so thin plates still block), porous boxes add drag by overlapped volume, and the Poisson operator, projection and heat transport use those fractions (WebGPU path included). CPU/GPU heat now enters the actual radiator/fin-stack/GPU-heatsink volume. GPU fans and air-cooler fans are per-fan jets. Room obstacles (PC, tabletop, legs) use the same exact rasterisation.
+
+Fit checks name both parts and the dimensions (GPU length/height, cooler height, radiator fan positions/size/length/stack thickness, envelope overlaps). Smoke now seeds one solver cell inside the case past each fan instead of in near-zero-velocity wall cells or solid room cells.
+
+Still open: cell heat capacity ignores solid volume fraction; GPU fan speed follows GPU watts (no fan curve); radiator/panel port losses are lumped assumptions; visual verification was limited to a throttled hidden browser pane.
