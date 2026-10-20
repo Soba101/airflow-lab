@@ -1,0 +1,14 @@
+export type V3=[number,number,number];
+export type Kind='case'|'gpu'|'board'|'cpu'|'ram'|'storage'|'cooler'|'fan';
+export interface Part {id:string;kind:Kind;name:string;size:V3;source?:string;verified:string[];note?:string;maxRPM?:number;cfm?:number;pressure?:number;curve?:[number,number][];curveStatus?:string;coolerType?:'air'|'aio';resistance?:number;capacity?:number;socket?:string;slots?:number[];mounts?:Mount[];clearance?:number;}
+export interface Mount {id:string;name:string;position:V3;normal:V3;sizes:number[];radiator?:boolean;}
+export interface FanConfig {id:string;part:string;mount:string;rpm:number;intake:boolean;enabled:boolean;}
+export interface Opening {id:string;type:'window'|'door';wall:'left'|'right'|'front'|'back';along:number;width:number;height:number;sill:number;open:number;}
+export interface Calibration {id:string;signature:string;ambient:number;cpuWatts:number;gpuWatts:number;rpm:number;cpuTemp:number;gpuTemp:number;cpuR:number;gpuR:number;created:string;}
+export interface SceneConfig {version:2;name:string;parts:Record<Exclude<Kind,'fan'>,string>;custom:Record<string,Part>;fans:FanConfig[];panelsOpen:boolean;radiatorMount:'top'|'front';slot:number;room:{size:V3;ambient:number;outside:number;adjacent:number;wallUA:number;exchange:number;openings:Opening[];};desk:{position:V3;width:number;depth:number;height:number;};pc:{placement:'deskLeft'|'deskRight'|'underLeft'|'underRight'|'floorLeft'|'floorRight';};load:{cpu:number;gpu:number;other:number;};analysis:{quality:'draft'|'balanced'|'fine';seconds:number;gridCheck:boolean;};calibrations:Calibration[];activeCalibration:string|null;}
+export interface Box {id:string;min:V3;size:V3;kind:string;porous?:number;}
+export interface CaseGeometry {size:V3;inner:V3;origin:V3;boxes:Box[];mounts:Mount[];cpu:V3;gpu:V3;radiator:V3;}
+export interface Field {n:V3;size:V3;origin:V3;velocity:Float32Array;temperature:Float32Array;pressure:Float32Array;solid:Uint8Array;}
+export interface Diagnostics {divergence:number;massError:number;energyError:number;couplingError:number;pressureResidual:number;cpu:number;gpu:number;cpuTransient?:number;gpuTransient?:number;coolant:number;room:number;intake:number;exhaust:number;flow:number;recirculation:number;time:number;steps:number;calibrated:boolean;fanFlows:{id:string;q:number;pa:number}[];}
+export interface Snapshot {room:Field;pc:Field;stats:Diagnostics;revision:number;backend:string;analysis?:{state:'running'|'converged'|'incomplete'|'cancelled'|'stale';elapsed:number;budget:number;progress:number;gridDelta?:number;reason?:string;};baseline?:Diagnostics;}
+export type WorkerMessage={type:'configure';config:SceneConfig;revision:number;baseline?:SceneConfig|null}|{type:'run';quality:'draft'|'balanced'|'fine';seconds:number;gridCheck:boolean}|{type:'cancel'}|{type:'pause';value:boolean};

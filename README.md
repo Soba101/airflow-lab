@@ -1,64 +1,53 @@
 # Airflow Lab
 
-An interactive browser sandbox for PC case airflow, desk placement, room ventilation and sensible heat. Runs entirely in the browser, without a server API or account. Generic rooms are user-defined; a sourced NZXT H6 Flow / RTX 5090 build is included.
+Airflow Lab is a browser-only PC airflow sandbox. Pick parts, arrange a room and desk, then follow smoke through a simulated case and into the room. The public demo is [soba101.github.io/airflow-lab](https://soba101.github.io/airflow-lab/).
 
-## Views
+## What works now
 
-- **Desk setup:** choose PC placement on, under, or beside the desk. Resize the desk and move the linked desk/PC group in the room plan.
-- **Room airflow:** set initial/outdoor/adjacent-space temperatures, room dimensions, PC heat, AC supply/capacity, fan direction, and assumed ventilation. Add windows and doors to walls, set width and open fraction, and compare configurations at identical elapsed times.
-- **Your PC:** dimensioned cutaway, side and top views of the H6 Flow build, with per-fan speed/direction controls, source links and a heat-load transfer to the room.
+- A connected Three.js room and PC view. Use **Room & desk** and **Inside PC** to move between them. In the case view, the room, desk and wall panels clear away so the selected hardware and flow are visible.
+- Part selectors for case, GPU, motherboard, CPU, RAM, storage and cooler. Start from either the H6 Flow / RTX 5090 / H100i or 4000D / RTX 4080 SUPER / NH-U12A preset.
+- Individual fan selection, model, supported case mount, RPM, direction and enabled state. A change of case keeps the selected configuration and reports invalid mounts; **Apply this case’s compatible starter layout** offers a replacement layout.
+- Room dimensions, temperatures, heat loads, desk placement, doors and windows. The desk and PC move together. Room mode lets users drag the setup or selected opening.
+- Computed 3D worker preview, smoke particles, streamlines, direction arrows, temperature/pressure overlays, room and case focus, a depth slice, and a point smoke source.
+- Save/load in local browser storage and JSON import/export. Baseline comparison uses the same room conditions and workload.
+- Optional measured thermal calibration, with profiles tied to the selected hardware and nearby operating conditions.
+- A WebGPU pressure-solve path when supported. The worker keeps a coarse preview available without WebGPU; detailed runs explain when the GPU path is unavailable.
 
-## Included hardware profile
+## Part data and model limits
 
-- GIGABYTE GeForce RTX 5090 WINDFORCE OC 32G (342 × 150 × 65 mm)
-- AMD Ryzen 7 5700X3D
-- GIGABYTE B550 AORUS ELITE V2, rev 1.5 (305 × 244 mm)
-- Patriot VIPER STEEL 32 GB (2 × 16 GB) DDR4-3200 (exact SKU unconfirmed)
-- Unspecified 512 GB M.2 NVMe (2280 envelope assumed) + Samsung 860 QVO 2 TB SATA
-- NZXT H6 Flow non-RGB
-- 2 × ARCTIC P14 Pro PST bottom fans, 1 × P12 Pro PST rear, 3 × stock NZXT case-version fans
-- Corsair H100i RGB PRO XT 240 mm top radiator; its 2 supplied ML120 fans assumed present
+The catalogue is intentionally small. Manufacturer links and verified properties are listed in the selector. An evidence label applies to the listed dimensions or specification only; it does not mean the full geometry or simulation is validated. The user's exact H6 Flow / RTX 5090 build is a preset, alongside a 4000D / RTX 4080 alternative.
 
-Published part envelopes and mount support are sourced in `dist/build-profile.mjs` and linked in the app. Exact mount coordinates, fan directions, RPM, RAM envelope, tube routing, PSU and storage locations are assumptions. No fit certification or chip-temperature prediction is provided.
+Airflow, pressure loss, fan operating points, heat transfer, and component temperatures are engineering-style **model estimates**. Fan curves are estimated from published endpoints unless a measured curve is entered. The case's internal mount coordinates, panel/filter losses, GPU cooler behavior, thermal resistances, RAM envelope and some part placement remain assumptions. The solver is not CFD-grade and is not calibrated against physical measurements. Use the **Sources & limits** panel for the assumptions attached to the current build.
+
+The GPU follows the motherboard's modeled PCIe slot. Fans and radiators snap to modeled mounts; geometry conflicts are reported instead of silently moving parts. A reported envelope fit is not a fit certification. The 3D grid is coarse, turbulence is simplified, and openings use a prescribed exchange rate rather than predicting outdoor wind or stack flow. Room walls and furniture have no heat storage; humidity and solar gain are omitted. The laptop/phone preview lowers particle density, and detailed analyses target desktop browsers.
 
 ## Run locally
 
-Serve the `dist/` directory over HTTP, for example:
+Requires Node.js 22 or later and npm:
 
 ```sh
-python3 -m http.server 8765 --directory dist
+npm ci
+npm run dev
 ```
 
-Then visit `http://localhost:8765/`. No installation or build step is needed. Room/build modules use browser ES modules.
+Vite prints the local URL. `npm test` runs the solver/profile checks. `npm run build` type-checks the TypeScript and creates the static site in `dist/`.
 
-## Tests
+## Project map
 
-With Node.js installed:
-
-```sh
-node --test tests/*.test.mjs
-```
-
-Tests verify conservation of sensible heat, uniform temperature invariance, AC capacity limits, ventilation, impermeable solids, room/part dimensions, fan capacity accounting, opening placement and linked desk movement. Numerical invariants are not validation against a real room.
-
-## Model and limits
-
-Room airflow uses a steady finite-volume staggered-grid projection of prescribed jets with balanced volume sources/sinks. Conservative upwind thermal transport adds PC power, fan heat, other loads, AC sensible cooling, opening exchange and envelope conductance.
-
-The room is 2D and height-averaged. It omits vertical buoyancy/stratification, flow over furniture, radiation, humidity and wall/furniture heat storage. The simplified PC footprint acts as a full-height solid. Above/below-desk placement is visual; the room solver resolves floor coordinates only. Local temperature peaks and velocity depend on resolution and the assumed jet/mixing profiles.
-
-Ventilation rate is prescribed by the user, then scaled by average opening fraction. Moving openings changes inlet/return locations, but window dimensions do not predict wind- or stack-driven flow. Window supply uses outdoor temperature; door-only supply uses the adjacent-space temperature. Closed or absent openings give zero prescribed opening exchange. Separate infiltration is not modelled.
-
-The PC cutaway is an illustrative geometric model, not a fluid solver. The room uses assumed installed PC flow, not a sum of free-air fan ratings. A heat-load transfer from the PC view copies only the selected electrical heat total to the room. Component-to-room airflow coupling remains future work.
-
-All scene settings are stored only in the browser's local storage. No telemetry or backend is included.
+- `src/catalog.ts` — sourced catalogue entries and fan/mount metadata.
+- `src/config.ts` — versioned `SceneConfig`, migration, dimensions, mount and fit checks.
+- `src/fluid.ts` — staggered 3D velocity grid, pressure projection, buoyancy and conservative heat/tracer transport.
+- `src/coupled.ts` and `src/thermal.ts` — two-way case/room ports and component thermal nodes.
+- `src/sim.worker.ts` and `src/webgpu.ts` — background calculations, WebGPU pressure solve, analysis budget and cancellation.
+- `src/view.ts` and `src/main.ts` — Three.js scene and user controls.
+- `legacy/` — previous 2D room and illustrative case views, retained as a reference during the 3D rebuild.
+- `tests-v2/` — 3D solver, energy, fan, thermal, geometry and configuration checks.
+- `tests/` — original room model checks.
 
 ## GitHub Pages
 
-The supplied GitHub Actions workflow tests and uploads only `dist/`. Enable GitHub Pages with **GitHub Actions** as the publishing source. Relative asset/navigation paths support project sites under `/airflow-lab/`.
+The repository is public and GitHub Pages publishes the static build at [https://soba101.github.io/airflow-lab/](https://soba101.github.io/airflow-lab/). The Actions workflow installs locked dependencies, runs both test suites, type-checks and builds the site, then deploys `dist/`. GitHub Pages can host public repositories on GitHub Free; see [GitHub's Pages limits and terms](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits).
 
-GitHub Pages is available free for public repositories on GitHub Free, subject to GitHub's service terms and limits: https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits
+## Work queue
 
-## Next steps
-
-Measure room geometry, vent flow and temperatures; compare sensor traces; add thermostat control, thermal storage, sunlight and humidity; then prepare 3D geometry and a separate buoyant-flow solver. Blender can prepare geometry but does not by itself validate airflow.
+Open issues are the implementation roadmap. The highest priority is improving case-focus framing and making the current numerical estimates more carefully validated and understandable before adding more catalogue breadth.

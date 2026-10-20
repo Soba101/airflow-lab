@@ -1,0 +1,22 @@
+{
+  "name": "airflow-lab",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "test": "node --import tsx --test tests-v2/*.test.ts && node --test tests/*.test.mjs",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "three": "^0.183.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.183.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "tsx": "^4.21.0",
+    "@types/node": "^22.0.0"
+  }
+}

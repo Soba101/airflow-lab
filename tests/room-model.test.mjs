@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {RoomModel,RHO_CP,normalizeRoom} from '../dist/room-model.mjs';
+import {RoomModel,RHO_CP,normalizeRoom} from '../legacy/room-model.mjs';
 const sealed={acOn:false,ventACH:0,wallUA:0,pcWatts:0,otherWatts:0,fanWatts:0};
 test('closed room and fan preserve uniform temperature and energy',()=>{const m=new RoomModel({...sealed,fanSpeed:1.2},30);m.advance(60);const s=m.stats();assert.ok(Math.abs(s.mean-27)<1e-6);assert.ok(s.max-s.min<1e-5);assert.ok(m.maxDivergenceError<1e-6);});
 test('PC watts become sensible heat, with circulation conserving energy',()=>{const m=new RoomModel({...sealed,pcWatts:500},30);m.advance(120);assert.ok(Math.abs(m.stats().energy-60000)<.01);assert.ok(m.stats().max>m.stats().mean);assert.ok(Math.abs(m.stats().energy-m.energyIn)<.01);});
