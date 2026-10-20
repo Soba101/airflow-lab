@@ -50,4 +50,4 @@ The repository is public and GitHub Pages publishes the static build at [https:/
 
 ## Work queue
 
-Open issues are the implementation roadmap. The highest priority is improving case-focus framing and making the current numerical estimates more carefully validated and understandable before adding more catalogue breadth.
+The [GitHub Issues board](https://github.com/Soba101/airflow-lab/issues) contains ten implementation tasks with scope, rationale and acceptance criteria. The same roadmap is kept in [docs/issue-roadmap.md](docs/issue-roadmap.md) so it is available from a fresh checkout. The highest priority is validating the numerical model before adding catalogue breadth.
