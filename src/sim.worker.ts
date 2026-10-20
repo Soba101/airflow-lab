@@ -1,12 +1,207 @@
 /// <reference lib="webworker" />
-import {CoupledModel} from './coupled';import {GPUProjector} from './webgpu';import {clone,issues,normalize} from './config';import type {SceneConfig,WorkerMessage,Snapshot,Diagnostics} from './types';
-let model:CoupledModel|null=null,baseline:CoupledModel|null=null,config:SceneConfig|null=null,baselineConfig:SceneConfig|null=null,revision=0,generation=0,paused=false,busy=false,gpu:GPUProjector|null=null,backend='CPU worker · coarse 3D',lastPublish=0;
-let analysis:Snapshot['analysis'],analysisStart=0,lastState:Diagnostics|null=null,stableCount=0,gridReference:CoupledModel|null=null;
-GPUProjector.create().then(p=>{gpu=p;if(p)backend='WebGPU pressure solve + worker transport';postMessage({type:'capability',webgpu:!!p,reason:p?'':'WebGPU unavailable: coarse worker preview remains available.'});});
-function makeBaseline(c:SceneConfig,quality:string){if(!baselineConfig)return null;const b=clone(baselineConfig);b.load=clone(c.load);b.room.size=clone(c.room.size);b.room.ambient=c.room.ambient;b.room.outside=c.room.outside;b.room.adjacent=c.room.adjacent;b.room.wallUA=c.room.wallUA;b.room.exchange=c.room.exchange;b.room.openings=clone(c.room.openings);return new CoupledModel(normalize(b),quality);}
-function emit(){if(!model)return;const data:Snapshot={room:model.room.field(),pc:model.pc.field(),stats:model.diagnostics(),revision,backend,analysis:analysis?{...analysis}:undefined,baseline:baseline?.diagnostics()};postMessage({type:'snapshot',data});lastPublish=performance.now();}
-function finish(state:'converged'|'incomplete',reason:string){if(analysis){analysis.state=state;analysis.reason=reason;analysis.progress=1;}emit();}
-async function tick(){if(busy)return;busy=true;const gen=generation;try{if(!model||paused||(analysis&&['converged','incomplete','cancelled'].includes(analysis.state)))return;const start=performance.now(),m=model,b=baseline;do{if(gen!==generation)return;if(analysis?.state==='running'&&!gpu?.available){finish('incomplete','GPU device became unavailable. Partial results retained.');postMessage({type:'capability',webgpu:false,reason:'GPU device lost; worker preview remains available.'});return;}let projection=gpu?.available?gpu:undefined;try{const models=[m,...(b?[b]:[]),...(gridReference?[gridReference]:[])];const prepared:Awaited<ReturnType<CoupledModel["prepare"]>>[]=[];for(const current of models)prepared.push(await current.prepare(.05,projection));const dt=Math.min(...prepared.map(p=>p.dt));models.forEach((current,i)=>current.commit(prepared[i],dt));}catch(error){if(projection){gpu=null;backend='CPU worker · WebGPU interrupted';if(analysis){finish('incomplete','GPU device lost or compute failed. Run stopped; switch to worker preview.');return;}postMessage({type:'capability',webgpu:false,reason:String(error)});}else throw error;}
-if(analysis?.state==='running'){const elapsed=(performance.now()-analysisStart)/1000;analysis.elapsed=elapsed;analysis.progress=analysis.budget?Math.min(.99,elapsed/analysis.budget):0;const d=m.diagnostics();if(lastState&&d.time>2&&Math.abs(d.cpu-lastState.cpu)<.005&&Math.abs(d.gpu-lastState.gpu)<.005&&Math.abs((d.cpuTransient!-lastState.cpuTransient!)/(d.time-lastState.time))<.002&&Math.abs((d.gpuTransient!-lastState.gpuTransient!)/(d.time-lastState.time))<.002&&d.pressureResidual<1e-3&&Math.abs(d.energyError)<.01&&d.massError<1e-7)stableCount++;else stableCount=0;lastState=d;if(stableCount>30){finish('converged','Flow and component-rate checks passed at this resolution; physical calibration remains separate.');return;}if(gridReference)analysis.gridDelta=Math.max(Math.abs(d.cpu-gridReference.diagnostics().cpu),Math.abs(d.gpu-gridReference.diagnostics().gpu));if(analysis.budget&&elapsed>=analysis.budget){finish('incomplete','Time budget reached before convergence. Results remain estimates; increase the budget or reduce quality.');return;}}
-}while(performance.now()-start<30&&gen===generation);if(performance.now()-lastPublish>250)emit();}catch(error){postMessage({type:'error',message:String(error)});paused=true;}finally{busy=false;setTimeout(tick,30);}}
-self.onmessage=(event:MessageEvent<WorkerMessage>)=>{const msg=event.data;if(msg.type==='configure'){generation++;revision=msg.revision;config=clone(msg.config);baselineConfig=msg.baseline?clone(msg.baseline):null;const warnings=issues(config);if(warnings.length){model=null;postMessage({type:'invalid',messages:warnings,revision});return;}try{model=new CoupledModel(config);baseline=makeBaseline(config,'preview');gridReference=null;analysis=analysis?{...analysis,state:'stale',reason:'Configuration changed. Previous detailed results are stale.'}:undefined;paused=false;emit();if(!busy)setTimeout(tick,0);}catch(error){postMessage({type:'error',message:String(error)});}}else if(msg.type==='run'&&config){generation++;if(!gpu?.available){postMessage({type:'error',message:'Detailed analysis requires WebGPU on this browser/device. Coarse 3D preview is available.'});return;}model=new CoupledModel(config,msg.quality);baseline=makeBaseline(config,msg.quality);gridReference=msg.gridCheck?new CoupledModel(config,msg.quality==='fine'?'balanced':'draft'):null;analysis={state:'running',elapsed:0,budget:msg.seconds,progress:0};analysisStart=performance.now();lastState=null;stableCount=0;paused=false;emit();if(!busy)setTimeout(tick,0);}else if(msg.type==='cancel'){generation++;if(analysis)analysis={...analysis,state:'cancelled',reason:'Cancelled by user. Partial results are retained.'};emit();}else if(msg.type==='pause'){paused=msg.value;if(!paused&&!busy)setTimeout(tick,0);}};
+import { CoupledModel } from "./coupled";
+import { GPUProjector } from "./webgpu";
+import { clone, issues, normalize } from "./config";
+import type { SceneConfig, WorkerMessage, Snapshot, Diagnostics } from "./types";
+let model: CoupledModel | null = null,
+  baseline: CoupledModel | null = null,
+  config: SceneConfig | null = null,
+  baselineConfig: SceneConfig | null = null,
+  revision = 0,
+  generation = 0,
+  paused = false,
+  busy = false,
+  gpu: GPUProjector | null = null,
+  backend = "CPU worker · coarse 3D",
+  lastPublish = 0;
+let analysis: Snapshot["analysis"],
+  analysisStart = 0,
+  lastState: Diagnostics | null = null,
+  stableCount = 0,
+  gridReference: CoupledModel | null = null;
+GPUProjector.create().then((p) => {
+  gpu = p;
+  if (p) backend = "WebGPU pressure solve + worker transport";
+  postMessage({
+    type: "capability",
+    webgpu: !!p,
+    reason: p ? "" : "WebGPU unavailable: coarse worker preview remains available.",
+  });
+});
+function makeBaseline(c: SceneConfig, quality: string) {
+  if (!baselineConfig) return null;
+  const b = clone(baselineConfig);
+  b.load = clone(c.load);
+  b.room.size = clone(c.room.size);
+  b.room.ambient = c.room.ambient;
+  b.room.outside = c.room.outside;
+  b.room.adjacent = c.room.adjacent;
+  b.room.wallUA = c.room.wallUA;
+  b.room.exchange = c.room.exchange;
+  b.room.openings = clone(c.room.openings);
+  return new CoupledModel(normalize(b), quality);
+}
+function emit() {
+  if (!model) return;
+  const data: Snapshot = {
+    room: model.room.field(),
+    pc: model.pc.field(),
+    stats: model.diagnostics(),
+    revision,
+    backend,
+    analysis: analysis ? { ...analysis } : undefined,
+    baseline: baseline?.diagnostics(),
+  };
+  postMessage({ type: "snapshot", data });
+  lastPublish = performance.now();
+}
+function finish(state: "converged" | "incomplete", reason: string) {
+  if (analysis) {
+    analysis.state = state;
+    analysis.reason = reason;
+    analysis.progress = 1;
+  }
+  emit();
+}
+async function tick() {
+  if (busy) return;
+  busy = true;
+  const gen = generation;
+  try {
+    if (!model || paused || (analysis && ["converged", "incomplete", "cancelled"].includes(analysis.state))) return;
+    const start = performance.now(),
+      m = model,
+      b = baseline;
+    do {
+      if (gen !== generation) return;
+      if (analysis?.state === "running" && !gpu?.available) {
+        finish("incomplete", "GPU device became unavailable. Partial results retained.");
+        postMessage({
+          type: "capability",
+          webgpu: false,
+          reason: "GPU device lost; worker preview remains available.",
+        });
+        return;
+      }
+      let projection = gpu?.available ? gpu : undefined;
+      try {
+        const models = [m, ...(b ? [b] : []), ...(gridReference ? [gridReference] : [])];
+        const prepared: Awaited<ReturnType<CoupledModel["prepare"]>>[] = [];
+        for (const current of models) prepared.push(await current.prepare(0.05, projection));
+        const dt = Math.min(...prepared.map((p) => p.dt));
+        models.forEach((current, i) => current.commit(prepared[i], dt));
+      } catch (error) {
+        if (projection) {
+          gpu = null;
+          backend = "CPU worker · WebGPU interrupted";
+          if (analysis) {
+            finish("incomplete", "GPU device lost or compute failed. Run stopped; switch to worker preview.");
+            return;
+          }
+          postMessage({ type: "capability", webgpu: false, reason: String(error) });
+        } else throw error;
+      }
+      if (analysis?.state === "running") {
+        const elapsed = (performance.now() - analysisStart) / 1000;
+        analysis.elapsed = elapsed;
+        analysis.progress = analysis.budget ? Math.min(0.99, elapsed / analysis.budget) : 0;
+        const d = m.diagnostics();
+        if (
+          lastState &&
+          d.time > 2 &&
+          Math.abs(d.cpu - lastState.cpu) < 0.005 &&
+          Math.abs(d.gpu - lastState.gpu) < 0.005 &&
+          Math.abs((d.cpuTransient! - lastState.cpuTransient!) / (d.time - lastState.time)) < 0.002 &&
+          Math.abs((d.gpuTransient! - lastState.gpuTransient!) / (d.time - lastState.time)) < 0.002 &&
+          d.pressureResidual < 1e-3 &&
+          Math.abs(d.energyError) < 0.01 &&
+          d.massError < 1e-7
+        )
+          stableCount++;
+        else stableCount = 0;
+        lastState = d;
+        if (stableCount > 30) {
+          finish(
+            "converged",
+            "Flow and component-rate checks passed at this resolution; physical calibration remains separate.",
+          );
+          return;
+        }
+        if (gridReference)
+          analysis.gridDelta = Math.max(
+            Math.abs(d.cpu - gridReference.diagnostics().cpu),
+            Math.abs(d.gpu - gridReference.diagnostics().gpu),
+          );
+        if (analysis.budget && elapsed >= analysis.budget) {
+          finish(
+            "incomplete",
+            "Time budget reached before convergence. Results remain estimates; increase the budget or reduce quality.",
+          );
+          return;
+        }
+      }
+    } while (performance.now() - start < 30 && gen === generation);
+    if (performance.now() - lastPublish > 250) emit();
+  } catch (error) {
+    postMessage({ type: "error", message: String(error) });
+    paused = true;
+  } finally {
+    busy = false;
+    setTimeout(tick, 30);
+  }
+}
+self.onmessage = (event: MessageEvent<WorkerMessage>) => {
+  const msg = event.data;
+  if (msg.type === "configure") {
+    generation++;
+    revision = msg.revision;
+    config = clone(msg.config);
+    baselineConfig = msg.baseline ? clone(msg.baseline) : null;
+    const warnings = issues(config);
+    if (warnings.length) {
+      model = null;
+      postMessage({ type: "invalid", messages: warnings, revision });
+      return;
+    }
+    try {
+      model = new CoupledModel(config);
+      baseline = makeBaseline(config, "preview");
+      gridReference = null;
+      analysis = analysis
+        ? { ...analysis, state: "stale", reason: "Configuration changed. Previous detailed results are stale." }
+        : undefined;
+      paused = false;
+      emit();
+      if (!busy) setTimeout(tick, 0);
+    } catch (error) {
+      postMessage({ type: "error", message: String(error) });
+    }
+  } else if (msg.type === "run" && config) {
+    generation++;
+    if (!gpu?.available) {
+      postMessage({
+        type: "error",
+        message: "Detailed analysis requires WebGPU on this browser/device. Coarse 3D preview is available.",
+      });
+      return;
+    }
+    model = new CoupledModel(config, msg.quality);
+    baseline = makeBaseline(config, msg.quality);
+    gridReference = msg.gridCheck ? new CoupledModel(config, msg.quality === "fine" ? "balanced" : "draft") : null;
+    analysis = { state: "running", elapsed: 0, budget: msg.seconds, progress: 0 };
+    analysisStart = performance.now();
+    lastState = null;
+    stableCount = 0;
+    paused = false;
+    emit();
+    if (!busy) setTimeout(tick, 0);
+  } else if (msg.type === "cancel") {
+    generation++;
+    if (analysis)
+      analysis = { ...analysis, state: "cancelled", reason: "Cancelled by user. Partial results are retained." };
+    emit();
+  } else if (msg.type === "pause") {
+    paused = msg.value;
+    if (!paused && !busy) setTimeout(tick, 0);
+  }
+};
