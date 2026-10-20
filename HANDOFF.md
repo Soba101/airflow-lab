@@ -8,7 +8,7 @@ Airflow Lab has moved from the earlier 2D room model and fixed-build case illust
 
 - Public source: [github.com/Soba101/airflow-lab](https://github.com/Soba101/airflow-lab)
 - Live GitHub Pages app: [soba101.github.io/airflow-lab](https://soba101.github.io/airflow-lab/)
-- Main branch handoff commit: `b48ac0b` — detailed issue roadmap and links
+- Starting handoff commit: `f39baa4`; latest continuation adds numerical benchmarks and an implementation audit.
 - Simulator implementation commit: `96c5732` — configurable 3D rebuild
 - GitHub Actions: run `39471285878` passed for `b48ac0b`, including tests, type-check, static build and Pages deployment
 - Detailed backlog: [GitHub Issues #1–#10](https://github.com/Soba101/airflow-lab/issues) and [docs/issue-roadmap.md](docs/issue-roadmap.md)
@@ -69,3 +69,9 @@ WebGPU is used for a pressure-solve path when available. The coarse worker previ
 4. Run `npm test` and `npm run build` before pushing. The workflow deploys successful pushes to `main` automatically.
 
 Keep the status language conservative: call outputs estimates until benchmark and real-hardware measurements support stronger claims.
+
+## Continuation — 21 October 2026
+
+Read issues #1–#10 and pulled main at f39baa4. Added `npm run benchmark`, independent analytic projection/diffusion references at two resolutions, fault-detection tests, and recorded JSON results in `docs/validation/`. Replaced the hardcoded coupling heat error with an assembled interface power residual shown in diagnostics. See `docs/validation/audit.md` for concrete gaps across all issues. Issue #1 stays open: channel obstruction, plume, GPU parity and physical validation are unfinished. Prioritize those, then coupling/geometry/readability as described in the audit.
+
+Validation: npm ci completed; local Vite dev server started; all 32 tests and npm run build passed (629.40 kB main bundle; size advisory remains). Browser/WebGPU visual and physical validation have not been performed in this continuation.

@@ -1,0 +1,59 @@
+{
+  "model": "FluidGrid numerical verification; not physical validation",
+  "pressure": [
+    {
+      "case": "cosine pressure projection",
+      "n": 8,
+      "dt": 0.025,
+      "iterations": 1000,
+      "tolerance": 1e-10,
+      "runtimeMs": 6.07608399999998,
+      "pressureError": 0.0063305205699363265,
+      "velocityError": 4.7482018317168695e-12,
+      "residual": 3.6736480631663057e-11
+    },
+    {
+      "case": "cosine pressure projection",
+      "n": 16,
+      "dt": 0.025,
+      "iterations": 1000,
+      "tolerance": 1e-10,
+      "runtimeMs": 19.415875,
+      "pressureError": 0.00160044521404068,
+      "velocityError": 1.3891110484109959e-12,
+      "residual": 1.7642545945755026e-11
+    }
+  ],
+  "heat": [
+    {
+      "case": "insulated cosine heat diffusion",
+      "n": 8,
+      "dt": 0.0015625,
+      "steps": 64,
+      "time": 0.1,
+      "runtimeMs": 6.477834000000001,
+      "temperatureError": 0.00012183179720537396,
+      "energyError": 8.881784197001252e-16
+    },
+    {
+      "case": "insulated cosine heat diffusion",
+      "n": 16,
+      "dt": 0.000390625,
+      "steps": 256,
+      "time": 0.1,
+      "runtimeMs": 49.194834000000014,
+      "temperatureError": 0.00003102017031508808,
+      "energyError": 5.551115123125783e-17
+    }
+  ],
+  "sensitivity": {
+    "pressureErrorRatio": 3.955474710660991,
+    "temperatureErrorRatio": 3.927502523934096
+  },
+  "unverified": [
+    "obstructed channel pressure drop",
+    "developed heated plume",
+    "CPU/WebGPU parity",
+    "measured PC and room airflow"
+  ]
+}

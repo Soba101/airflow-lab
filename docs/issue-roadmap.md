@@ -2,6 +2,8 @@
 
 This document preserves the technical intent and acceptance criteria for the public [GitHub Issues board](https://github.com/Soba101/airflow-lab/issues). Start with solver validation, then improve the coupled model and geometry before expanding the catalogue.
 
+Current audit: [implementation gaps, 21 October 2026](validation/audit.md). First numerical references: [setups, thresholds and remaining gates](validation/README.md). All ten issues remain open.
+
 ## [#1 · P0] [Validate the 3D solver against documented flow benchmarks](https://github.com/Soba101/airflow-lab/issues/1)
 
 ### Goal

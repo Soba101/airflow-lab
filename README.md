@@ -32,6 +32,10 @@ npm run dev
 
 Vite prints the local URL. `npm test` runs the solver/profile checks. `npm run build` type-checks the TypeScript and creates the static site in `dist/`.
 
+## Numerical verification
+
+`npm run benchmark` emits reproducible two-resolution pressure-projection and heat-diffusion errors. See [reference setups and thresholds](docs/validation/README.md), [recorded results](docs/validation/results.json), and the [requirements audit](docs/validation/audit.md). These checks verify limited numerical behavior, not physical PC/room accuracy. Obstructed flow, plume and WebGPU parity benchmarks remain open in issue #1.
+
 ## Project map
 
 - `src/catalog.ts` — sourced catalogue entries and fan/mount metadata.
