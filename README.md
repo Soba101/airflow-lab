@@ -50,4 +50,4 @@ The repository is public and GitHub Pages publishes the static build at [https:/
 
 ## Work queue
 
-The [GitHub Issues board](https://github.com/Soba101/airflow-lab/issues) contains ten implementation tasks with scope, rationale and acceptance criteria. The same roadmap is kept in [docs/issue-roadmap.md](docs/issue-roadmap.md) so it is available from a fresh checkout. The highest priority is validating the numerical model before adding catalogue breadth.
+The [GitHub Issues board](https://github.com/Soba101/airflow-lab/issues) contains ten implementation tasks with scope, rationale and acceptance criteria. The same roadmap is kept in [docs/issue-roadmap.md](docs/issue-roadmap.md). See [HANDOFF.md](HANDOFF.md) for project status, setup instructions, architecture, limitations and the recommended next session. The highest priority is validating the numerical model before adding catalogue breadth.
